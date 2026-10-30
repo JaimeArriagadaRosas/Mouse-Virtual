@@ -74,3 +74,11 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - Se añadió `modules/agent_control/desktop.py` y soporte de comandos `desktop.find_control`, `desktop.fill`, `desktop.invoke` y `desktop.read_control`.
 - Pruebas de integración: apertura real de ventana y ejecución CLI de extremo a extremo; se mantienen separadas de los tests unitarios.
 - **Limitaciones:** API local, no está en la GUI ni en MCP; para operar aplicaciones reales, el usuario debe autorizar explícitamente la ventana; no todos los controles exponen ValuePattern/InvokePattern. No se usa SendInput ni teclado global.
+
+## Décima etapa: pestaña Agente IA
+
+- Se incorporó una sexta pestaña con selección explícita de ventana, inspección UI Automation, edición mediante ValuePattern, invocación mediante InvokePattern y lectura de controles.
+- Los comandos utilizan DesktopExecutor existente; no usan SendInput ni teclado físico global.
+- El panel informa resultados y fallas en texto. No tiene servidor remoto ni escucha comandos por red.
+- Prueba de interfaz con fixture Windows real, más pruebas de selección y enrutamiento con mocks.
+- Pendientes: política de autorización persistente, redacción de campos sensibles, evitar bloqueos temporales de Qt con UIA lento, UI asíncrona, empaquetado y MCP.

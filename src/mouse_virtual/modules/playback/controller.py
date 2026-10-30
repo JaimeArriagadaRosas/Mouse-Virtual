@@ -90,8 +90,8 @@ class PlaybackMixin:
         self.action_mode=self.mode
         if self.action_mode=='automation':
             self.start_recorded();return
-        if self.action_mode=='virtual':
-            self.report_error('Selecciona Clicker, Teclado o Secuencias.');return
+        if self.action_mode in ('virtual','agent'):
+            self.report_error('Selecciona Clicker, Teclado o Secuencias. El agente tiene controles independientes.');return
         if self.action_mode == "sequence":
             try:
                 plan = self.current_plan()

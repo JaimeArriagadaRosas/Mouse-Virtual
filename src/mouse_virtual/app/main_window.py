@@ -8,6 +8,7 @@ from mouse_virtual.modules.sequences.repository import SequenceStore
 
 
 from mouse_virtual.modules.clicker.controller import ClickerMixin
+from mouse_virtual.modules.agent_control.controller import AgentPanelMixin
 from mouse_virtual.modules.keyboard.controller import KeyboardMixin
 from mouse_virtual.modules.sequences.controller import SequencesMixin
 from mouse_virtual.modules.sequences.view import SequencePageMixin
@@ -18,7 +19,7 @@ from mouse_virtual.modules.automation.controller import AutomationMixin
 from mouse_virtual.app.settings_controller import SettingsMixin
 from mouse_virtual.app.ui_layout import LayoutMixin
 
-class Main(ClickerMixin, KeyboardMixin, SequencePageMixin, SequencesMixin, RecordingMixin, PlaybackMixin, VirtualCursorMixin, AutomationMixin, SettingsMixin, LayoutMixin, QMainWindow):
+class Main(AgentPanelMixin, ClickerMixin, KeyboardMixin, SequencePageMixin, SequencesMixin, RecordingMixin, PlaybackMixin, VirtualCursorMixin, AutomationMixin, SettingsMixin, LayoutMixin, QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Mouse Virtual")
@@ -41,6 +42,7 @@ class Main(ClickerMixin, KeyboardMixin, SequencePageMixin, SequencesMixin, Recor
         self.was_stop=False;self.was_record=False;self.was_pause=False
         self.build()
         self.populate_windows()
+        self.agent_refresh_windows()
         self.load_settings()
         self.refresh_sequences()
         for key,action in [("F6",self.start),("F7",self.stop),("F8",self.toggle)]:
