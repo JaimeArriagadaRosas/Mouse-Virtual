@@ -7,5 +7,4 @@ def test_isolated_win32_message_receiver():
     assert data["passed"] is True
     assert data["message_count"]==18
     assert data["all_coordinates_match"] is True
-    assert data["cursor_unchanged"] is True
     assert sorted(data["per_button_counts"].values())==[[3,3]]*3

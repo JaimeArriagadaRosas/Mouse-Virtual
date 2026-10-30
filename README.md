@@ -116,7 +116,7 @@ Las pruebas están separadas en `tests/unit`, `tests/integration`, `tests/gui` y
 .\.venv\Scripts\python.exe scripts/input_receiver_lab.py
 ~~~
 
-La batería de referencia del 30/10/2026 consta de **24 pruebas automatizadas aprobadas**. La prueba de recepción Win32 confirmó 18/18 mensajes en una ventana aislada; esto **no valida la entrada en Roblox**.
+La batería de referencia del 30/10/2026 consta de **31 pruebas automatizadas aprobadas**. La prueba de recepción Win32 confirmó 18/18 mensajes en una ventana aislada; esto **no valida la entrada en Roblox**.
 
 Prueba de interfaz aislada:
 
@@ -136,6 +136,27 @@ PyInstaller es una dependencia de compilación opcional:
 ~~~
 
 Los archivos generados quedan en **dist/MouseVirtual** y se excluyen de Git. La aplicación requiere la carpeta completa de distribución y no únicamente el ejecutable.
+
+## Control de navegador para agentes (versión inicial)
+
+El paquete incorpora un adaptador opcional de **Playwright/Chromium** que opera en una sesión separada del mouse y teclado del usuario. Puede descubrir campos mediante roles y etiquetas, escribir texto, activar botones y leer el resultado. Su primer escenario de integración utiliza una página local que busca «perritos», sin acceso al navegador personal.
+
+Para instalar la dependencia opcional:
+
+~~~powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[browser]"
+.\.venv\Scripts\python.exe -m playwright install chromium
+~~~
+
+En un sitio de laboratorio con un campo de búsqueda accesible, se puede usar el CLI:
+
+~~~powershell
+.\.venv\Scripts\python.exe -m mouse_virtual.modules.agent_control.cli --url http://127.0.0.1:8000 --query perritos --allowed-host 127.0.0.1
+~~~
+
+**Importante:** la ejecución CLI sigue limitada a hosts permitidos; no implementa aún integración MCP, UI Automation de escritorio ni operación en cualquier navegador del usuario. No se incluye el entorno Playwright/Chromium en el ejecutable principal.
+
+Se incorporó un cursor virtual SVG negro de elaboración propia; este cursor sigue siendo solo una indicación visual. Las mediciones de temporizador están en [el informe de rendimiento](docs/testing/performance.md).
 
 ## Estado del desarrollo
 

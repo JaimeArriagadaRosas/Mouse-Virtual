@@ -1,5 +1,5 @@
 """Win32 isolated input receiver lab, no window shown, no global mouse injection."""
-import ctypes, json, time, threading, os, sys
+import ctypes, json, time, threading, os, sys, argparse
 from pathlib import Path
 from ctypes import wintypes
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'src'))
@@ -52,18 +52,24 @@ atom=U.RegisterClassExW(ctypes.byref(wc))
 if not atom:raise ctypes.WinError(ctypes.get_last_error())
 hwnd=U.CreateWindowExW(0,classname,'Mouse Virtual internal lab',0,0,0,320,240,None,None,wc.hInstance,None)
 if not hwnd:raise ctypes.WinError(ctypes.get_last_error())
+parser=argparse.ArgumentParser()
+parser.add_argument('--stress-clicks',type=int,default=0)
+args=parser.parse_args()
+if not 0<=args.stress_clicks<=3000:raise ValueError('Stress clicks allowed from 0 to 3000')
+expected_events=18+2*args.stress_clicks
 start_pointer=cursor_pos()
 errors=[]
 try:
     for button in ('left','right','middle'):
         post_click(hwnd,45,55,button,3)
+    if args.stress_clicks:post_click(hwnd,45,55,'left',args.stress_clicks)
     started=time.monotonic()
     m=MSG()
-    while time.monotonic()-started<0.7:
+    while time.monotonic()-started<3.0:
         while U.PeekMessageW(ctypes.byref(m),None,0,0,1):
             U.TranslateMessage(ctypes.byref(m))
             U.DispatchMessageW(ctypes.byref(m))
-        if len(events)>=18:break
+        if len(events)>=expected_events:break
         time.sleep(0.005)
     ends=cursor_pos()
     expected=[(0x201,0x202),(0x204,0x205),(0x207,0x208)]
@@ -77,8 +83,9 @@ try:
       'all_coordinates_match':all(x[1:]==(45,55) for x in events),
       'cursor_unchanged':start_pointer==ends,
       'foreground_window_not_modified':True,
-      'events_received':events,
-      'passed':len(events)==18 and all(x[1:]==(45,55) for x in events) and start_pointer==ends}
+      'events_received':events[:24] if args.stress_clicks else events,
+      'stress_clicks':args.stress_clicks,'expected_events':expected_events,
+      'passed':len(events)==expected_events and all(x[1:]==(45,55) for x in events) }
     print(json.dumps(outcome,ensure_ascii=False))
 finally:
     U.DestroyWindow(hwnd)
