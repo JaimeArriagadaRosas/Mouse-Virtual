@@ -40,3 +40,13 @@ Ejecutar:
 - Se ejecuta desde un proceso CLI distinto, que una conexión remota puede terminar si excede su tiempo límite; el CLI no arranca servidor de red.
 - La interfaz gráfica mantiene sus funciones independientes. No se resolvió aquí su bloqueo síncrono en UIA.
 - Se probó un plan real sobre la ventana de laboratorio Qt. Las operaciones sobre otros programas dependen de su compatibilidad UIA y de la autorización correspondiente.
+
+## Supervisor con timeout y compatibilidad
+
+La forma recomendada de ejecutar procesos desde la conexión remota es:
+`python -m mouse_virtual.modules.agent_control.supervised_cli --timeout 12 windows`
+Los subcomandos `inspect` y `run` reciben los mismos parámetros que `remote_cli`. El supervisor lanza un proceso hijo y establece un timeout entre 1 y 60 segundos. Ante exceso del plazo, detiene el proceso hijo y devuelve un error JSON. Una operación UIA ya confirmada antes del timeout no se revierte.
+
+**Compatibilidad verificada:** se inspeccionó una instancia propia de Bloc de notas de Windows con la aplicación actual (Windows build 26200). Se encontraron botones y textos de la interfaz, pero no apareció un campo `Edit` del editor entre los controles inspeccionados. No se intentó escribir usando entrada global. La compatibilidad depende de cómo cada programa exponga UI Automation.
+
+El resultado de `desktop.read_control` sigue devolviendo el texto del control explícitamente seleccionado: el agente que utilice ese resultado debe tratarlo como dato potencialmente sensible. Evita incluir secretos en archivos de planes.

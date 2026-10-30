@@ -100,3 +100,9 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - Cinco pruebas nuevas: contrato de autorización y plan, cambios de identidad, inspección y búsqueda completa en la ventana real de laboratorio. **71 tests aprobados**.
 - Pendiente: política de permisos por aplicación, timeout duro de proceso desde el llamador, control de datos sensibles en lecturas y compatibilidad real con otros programas. La GUI existente no se modificó.
 - Guía en `docs/features/agent-remote-cli.md`.
+
+## Etapa XIII: supervisor remoto y compatibilidad
+
+- CLI supervisado con límite de tiempo duro por proceso e interfaz de errores JSON.
+- Prueba real de inspección de Bloc de notas: accesibilidad parcial sin control Edit del contenido; no se recurrió a SendInput.
+- 73 tests aprobados; queda pendiente un mecanismo de autorización más fuerte para aplicaciones externas y política de lectura de datos sensibles.
