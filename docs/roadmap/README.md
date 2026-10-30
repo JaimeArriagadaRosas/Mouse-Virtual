@@ -25,3 +25,10 @@ Se verificó con una ventana Win32 aislada que el adaptador entrega 18 de 18 men
 Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../testing/performance.md).
 
 - **Nuevo diagnóstico aprobado:** 1000 clics dirigidos a receptor Win32 (2000 mensajes de botón), más 18 eventos de control; cursor físico sin cambios. No refleja CPS real.
+
+## Clicker: ejecución controlada (segunda etapa, continuación)
+
+- **Implementado:** ClickBudget y ScheduleMetrics en modules/clicker/scheduler.py; límite de acciones exacto, sin sobrepasar cantidades impares con clic doble, Qt PreciseTimer, métricas de desviación registradas como CLICKER_SCHEDULE y modo de simulación sin Win32.
+- **Validación:** 40 pruebas pytest, smoke de cinco vistas y prueba GUI E2E.
+- **Pendiente:** sacar el temporizador de ejecución del hilo de interfaz si las mediciones bajo carga lo justifican; medir frecuencia y recepción en el motor efectivo, así como CPU, memoria, cancelación y cambio de ventanas.
+- **No se cambió** el mínimo de 50 ms. El rendimiento real de la aplicación destino no está demostrado.

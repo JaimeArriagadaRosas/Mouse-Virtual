@@ -116,7 +116,7 @@ Las pruebas están separadas en `tests/unit`, `tests/integration`, `tests/gui` y
 .\.venv\Scripts\python.exe scripts/input_receiver_lab.py
 ~~~
 
-La batería de referencia del 30/10/2026 consta de **35 pruebas automatizadas aprobadas**. La prueba de recepción Win32 confirmó 18/18 mensajes en una ventana aislada; esto **no valida la entrada en Roblox**.
+La batería de referencia del 30/10/2026 consta de **40 pruebas automatizadas aprobadas**. La prueba de recepción Win32 confirmó 18/18 mensajes en una ventana aislada; esto **no valida la entrada en Roblox**.
 
 Prueba de interfaz aislada:
 
