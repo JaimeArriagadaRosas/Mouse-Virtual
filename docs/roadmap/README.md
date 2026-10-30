@@ -60,3 +60,10 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - Carga: se verificó la cancelación antes de emitir entradas sobre un presupuesto de 10.000 clics. **No** equivale a ejecutar 10.000 clics reales ni prueba estabilidad prolongada.
 - Geometría: límites de transformación de 1920x1080 a 1280x720 y detección de dimensiones inválidas.
 - Pendientes: DPI real y múltiples monitores físicos, carreras de foco durante `SendInput`, más ensayos prolongados y el adaptador UI Automation.
+
+## Windows UI Automation — adaptador inicial
+
+- Se incorporó `infrastructure/windows/accessibility.py` con control por HWND, búsqueda de campo por AutomationId o nombre, bloqueo ante controles ambiguos/deshabilitados, y escritura por UIA ValuePattern verificando el valor leído.
+- Dependencia opcional `pywinauto` declarada como extra `desktop`, instalada solo en entorno virtual.
+- Tres pruebas unitarias nuevas con controles simulados: selección única, rechazo de ambigüedades y rechazo de controles deshabilitados. **57 pruebas aprobadas**.
+- Limitación expresa: todavía no se integró al CLI del agente ni se hizo una prueba real de ValuePattern contra una ventana Windows. El diseño no utiliza SendInput ni teclado global como fallback.
