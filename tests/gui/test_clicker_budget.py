@@ -28,8 +28,8 @@ def test_simulated_double_click_odd_limit_does_not_call_os(monkeypatch):
         monkeypatch.setattr(controller,"client_size",lambda hwnd:(640,480))
         w.start()
         assert w.running
-        w.timer.stop()
-        for _ in range(3):w.tick()
+        w.click_worker.join(2)
+        w.poll_click_worker()
         assert w.sent==5
         assert not w.running
         assert w.click_budget.exhausted
@@ -44,8 +44,8 @@ def test_real_clicker_budget_allocates_partial_double(monkeypatch):
         monkeypatch.setattr(controller,"client_size",lambda hwnd:(640,480))
         w.start()
         assert w.running
-        w.timer.stop()
-        for _ in range(3):w.tick()
+        w.click_worker.join(2)
+        w.poll_click_worker()
         assert calls==[2,2,1]
         assert w.sent==5 and not w.running
     finally:w.stop();w.close()

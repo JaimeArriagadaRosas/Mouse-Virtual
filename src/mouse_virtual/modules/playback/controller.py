@@ -1,9 +1,10 @@
 """Mouse Virtual desktop module."""
 import ctypes
 import time
+import queue
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt
-from mouse_virtual.modules.clicker.scheduler import ClickBudget, ScheduleMetrics
+from mouse_virtual.modules.clicker.worker import ClickWorker
 from mouse_virtual.infrastructure.geometry import compare, snapshot
 from mouse_virtual.infrastructure.windows.handles import client_size, client_to_screen
 from mouse_virtual.infrastructure.windows.input import native_click, native_key, post_click
@@ -119,24 +120,98 @@ class PlaybackMixin:
             answer=QMessageBox.warning(self,"Modo global","El modo global puede mover el puntero físico e interferir con otras aplicaciones. ¿Continuar?",
                     QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
             if answer!=QMessageBox.StandardButton.Yes:return
-        if self.action_mode == "clicker":
-            limit = self.repeat_count.value() if choice(self.repeats) == 1 else None
-            try:
-                self.click_budget = ClickBudget(delay, limit)
-                self.click_schedule = ScheduleMetrics(delay)
-            except ValueError as exc:
-                self.report_error(str(exc))
-                return
-        self.sent=0;self.start_time=time.monotonic();self.running=True
+        self.sent=0
+        self.start_time=time.monotonic()
+        self.running=True
         self.finished_elapsed=None
-        self.sequence_cursor=0;self.sequence_repeated=0
-        self.state.setText("●  Ejecutando");self.run_button.setText("■  Detener   F7")
-        self.timer.setTimerType(Qt.TimerType.PreciseTimer)
-        if self.action_mode == "clicker":
-            self.click_schedule.start()
-        self.timer.start(delay)
+        self.state.setText("Ejecutando")
+        self.run_button.setText("Detener   F7")
+        try:
+            if self.action_mode == "clicker":
+                self._start_click_worker(delay)
+            else:
+                self.timer.setTimerType(Qt.TimerType.PreciseTimer)
+                self.timer.start(delay)
+        except Exception as exc:
+            self.running=False
+            self.report_error(str(exc))
+            return
         self.session_log.write('GUI_START',mode=self.action_mode,target=self.target)
         self.summary.setText("Acciones enviadas, no equivalen a recepción confirmada.")
+
+    def _start_click_worker(self,interval_ms):
+        """Snapshot widget settings before entering the worker thread."""
+        limit=self.repeat_count.value() if choice(self.repeats)==1 else None
+        group_size=2 if choice(self.clicktypes)==1 else 1
+        button=["left","right","middle"][choice(self.buttons)]
+        mode=self.input_mode
+        hwnd=self.target
+        x,y=self.x.value(),self.y.value()
+        position=choice(self.positions)
+        if mode == 1 and position != 2:
+            raise ValueError("El modo Win32 dirigido requiere posición de ventana")
+        events=queue.SimpleQueue()
+        self.click_worker_events=events
+        token=object()
+        self.click_worker_token=token
+
+        def dispatch(count):
+            # No QWidget or Qt calls from this background thread.
+            if mode==0:
+                return {"status":"SIMULATED","count":count,"x":x,"y":y}
+            if mode==1:
+                post_click(hwnd,x,y,button,count)
+                return {"status":"POSTED_UNCONFIRMED","count":count,"x":x,"y":y}
+            if mode==2:
+                if position==0:
+                    point=None
+                elif position==1:
+                    point=(x,y)
+                else:
+                    point=client_to_screen(hwnd,x,y)
+                native_click(button,count,point)
+                return {"status":"GLOBAL_INPUT_SENT_UNCONFIRMED","count":count,"x":x,"y":y}
+            raise ValueError("Invalid clicker input mode")
+
+        def progress(total,meta):
+            events.put((token,"progress",total,meta))
+
+        def ended(reason,total,metrics):
+            events.put((token,"ended",reason,total,metrics))
+
+        worker=ClickWorker(interval_ms,limit,group_size,dispatch,progress,ended)
+        self.click_worker=worker
+        self.click_budget=worker.budget
+        self.click_schedule=worker.metrics
+        worker.start()
+
+    def poll_click_worker(self):
+        events=getattr(self,"click_worker_events",None)
+        if events is None:
+            return
+        while True:
+            try:token,kind,*payload=events.get_nowait()
+            except queue.Empty:break
+            if token is not getattr(self,"click_worker_token",None):
+                continue
+            if kind=="progress":
+                total,meta=payload
+                self.sent=total
+                status=meta["status"]
+                if self.input_mode in (0,1) and self.target:
+                    try:
+                        width,height=client_size(self.target)
+                        self.position_preview.update_step(meta["x"],meta["y"],width,height,status)
+                    except Exception as exc:
+                        self.session_log.write("CLICKER_PREVIEW_ERROR",message=str(exc))
+                self.summary.setText(f"Clicker: {total} acciones, {status}")
+                self.session_log.write("CLICKER_STEP",status=status,count=meta["count"],total=total)
+            elif kind=="ended":
+                reason,total,metrics=payload
+                self.sent=total
+                self.session_log.write("CLICKER_SCHEDULE",**metrics)
+                self.stop()
+                self.summary.setText(f"Clicker: {reason}. Acciones emitidas: {total}")
 
     def toggle(self):
         if self.running:self.stop()
@@ -144,43 +219,14 @@ class PlaybackMixin:
 
     def tick(self):
         try:
-            if self.action_mode == "clicker":
-                button = ["left", "right", "middle"][choice(self.buttons)]
-                requested = 2 if choice(self.clicktypes) == 1 else 1
-                count = self.click_budget.allocate(requested)
-                if count == 0:
-                    self.stop()
-                    return
-                self.click_schedule.observe()
-                if self.input_mode == 0:
-                    status = "SIMULATED"
-                elif self.input_mode == 1:
-                    post_click(self.target, self.x.value(), self.y.value(), button, count)
-                    status = "POSTED_UNCONFIRMED"
-                elif self.input_mode == 2:
-                    point = None if choice(self.positions) == 0 else (
-                        (self.x.value(), self.y.value()) if choice(self.positions) == 1
-                        else client_to_screen(self.target, self.x.value(), self.y.value()))
-                    native_click(button, count, point)
-                    status = "GLOBAL_INPUT_SENT_UNCONFIRMED"
-                else:
-                    raise ValueError("Invalid input mode")
-                self.click_budget.record(count)
-                self.sent = self.click_budget.emitted
-                if self.input_mode in (0, 1):
-                    w, h = client_size(self.target)
-                    self.position_preview.update_step(self.x.value(), self.y.value(), w, h, status)
-                self.session_log.write("CLICKER_STEP", mode=self.input_mode, status=status,
-                                       button=button, count=count, total=self.sent)
-                if self.click_budget.exhausted:
-                    self.stop()
-            elif self.action_mode=="keyboard":
+            if self.action_mode=="keyboard":
                 native_key(self.key.currentText());self.sent+=1
                 if self.sent>=self.key_count.value():self.stop()
         except Exception as exc:
             self.stop();self.report_error(f"Ejecución detenida: {exc}")
 
     def poll_playback(self):
+        self.poll_click_worker()
         while self.playback_events:
             kind,args=self.playback_events.pop(0)
             if kind=='progress':
@@ -201,11 +247,11 @@ class PlaybackMixin:
 
     def stop(self):
         if self.running:self.finished_elapsed=time.monotonic()-self.start_time
-        if self.running and getattr(self, "action_mode", None) == "clicker":
-            schedule = getattr(self, "click_schedule", None)
-            if schedule is not None:
-                self.session_log.write("CLICKER_SCHEDULE", **schedule.summary())
+        worker=getattr(self,"click_worker",None)
+        if worker is not None:
+            worker.stop()
         self.timer.stop();self.running=False
+        self.click_worker_token=None
         self.playback.stop()
         self.session_log.write('GUI_STOP')
         self.state.setText("●  Preparado");self.run_button.setText("▶  Iniciar   F6")

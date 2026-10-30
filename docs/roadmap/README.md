@@ -39,3 +39,10 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - La función de envío se inyecta (no incluye acoplamiento con Qt ni llamadas globales). Las pruebas usan exclusivamente callbacks simulados.
 - **Todavía no está conectado al botón Iniciar de la GUI.** El clicker de escritorio conserva Qt PreciseTimer hasta que exista una cola de eventos segura entre hilos, se congele el destino al comenzar y se prueben controles, cancelación, métricas y no interferencia.
 - Validación: 43 pruebas pytest aprobadas (3 pruebas nuevas del worker); GUI E2E aprobada. No se cambió mínimo de 50 ms.
+
+## Integración gráfica del ClickWorker
+
+- **Implementado:** el clicker de la GUI usa ClickWorker en hilo independiente y cola de eventos SimpleQueue. Solo el hilo de Qt actualiza widgets y registra eventos visuales.
+- **Seguridad:** configuración de destino/botón/coordenadas capturada al inicio, cancelación del worker en Detener y cierre, descarte de eventos de ejecuciones anteriores.
+- **Validación:** 45 pruebas pytest, incluida cancelación antes del primer clic y eventos atrasados. Smoke de 5 pestañas y GUI E2E aprobados.
+- **Pendiente:** perfiles prolongados bajo carga real, interferencia con aplicaciones externas, control de cambios de foco en modo global, y mejorar la separación de mixins. El intervalo mínimo sigue siendo 50 ms.
