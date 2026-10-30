@@ -26,22 +26,28 @@ El cursor virtual es una **representación visual**: no equivale a un segundo di
 - **Coordenadas:** posiciones relativas a la ventana cliente y metadatos de geometría para grabaciones recientes.
 - **Diagnóstico:** logs JSONL y prueba de recepción Win32 en ventana aislada.
 
-## Arquitectura
+## Arquitectura — Modular Single App
 
 ![Arquitectura de Mouse Virtual](assets/architecture.svg)
 
-| Componente | Descripción |
+Una sola aplicación Windows, organizada en paquetes funcionales dentro de `src/mouse_virtual/`. **No es un monorepositorio**: las carpetas de pruebas, herramientas y documentación viven fuera del paquete distribuible.
+
+| Carpeta | Responsabilidad |
 | --- | --- |
-| main.py | Ventana principal, paneles y atajos |
-| automation_view.py | Página de automatización |
-| recorder.py | Captura de clics y controles de grabación |
-| plans.py | Modelo y validación de pasos |
-| sequence_store.py | Persistencia local de secuencias |
-| runtime_v03.py | Motor de reproducción y bitácora |
-| win32_core.py | Adaptadores Win32 y entrada global |
-| geometry.py | Geometría de pantalla y transformaciones |
-| position_preview.py | Monitor visual interno |
-| theme.qss | Estilos PySide6 |
+| `src/mouse_virtual/app/` | Arranque, ventana Qt, navegación y composición |
+| `src/mouse_virtual/modules/clicker/` | Clics temporizados |
+| `src/mouse_virtual/modules/keyboard/` | Entrada de teclado |
+| `src/mouse_virtual/modules/recording/` | Grabación y controles de captura |
+| `src/mouse_virtual/modules/sequences/` | Modelos, persistencia y edición de secuencias |
+| `src/mouse_virtual/modules/playback/` | Reproducción y diagnósticos |
+| `src/mouse_virtual/modules/automation/` | Selección de ventanas y panel de automatización |
+| `src/mouse_virtual/modules/virtual_cursor/` | Vista previa interna del cursor |
+| `src/mouse_virtual/infrastructure/` | Adaptadores Win32, geometría, configuración y logs |
+| `src/mouse_virtual/resources/` | Hoja de estilos Qt |
+| `tests/` | Pruebas unitarias, de integración y GUI |
+| `scripts/`, `packaging/`, `docs/` | Laboratorio, distribución y documentación |
+
+El archivo `main.py` de la raíz es únicamente un lanzador de compatibilidad. Más información en [arquitectura y normas de dependencia](docs/architecture/README.md).
 
 ## Modos de entrada
 
@@ -105,16 +111,16 @@ Los archivos locales del usuario no se incluyen en este repositorio.
 
 ~~~powershell
 .\.venv\Scripts\python.exe -m pytest -q tests
-.\.venv\Scripts\python.exe input_receiver_lab.py
+.\.venv\Scripts\python.exe scripts/input_receiver_lab.py
 ~~~
 
-La batería de referencia del 30/10/2026 consta de **20 pruebas automatizadas aprobadas**. La prueba de recepción Win32 confirmó 18/18 mensajes en una ventana aislada; esto **no valida la entrada en Roblox**.
+La batería de referencia del 30/10/2026 consta de **24 pruebas automatizadas aprobadas**. La prueba de recepción Win32 confirmó 18/18 mensajes en una ventana aislada; esto **no valida la entrada en Roblox**.
 
 Prueba de interfaz aislada:
 
 ~~~powershell
 $env:QT_QPA_PLATFORM = 'offscreen'
-.\.venv\Scripts\python.exe gui_e2e_isolated.py
+.\.venv\Scripts\python.exe scripts/gui_e2e_isolated.py
 Remove-Item Env:QT_QPA_PLATFORM
 ~~~
 
@@ -124,7 +130,7 @@ PyInstaller es una dependencia de compilación opcional:
 
 ~~~powershell
 .\.venv\Scripts\python.exe -m pip install pyinstaller
-.\.venv\Scripts\python.exe -m PyInstaller --noconfirm --windowed --onedir --name MouseVirtual --add-data "theme.qss;." main.py
+.\.venv\Scripts\python.exe -m PyInstaller --noconfirm packaging/MouseVirtual.spec
 ~~~
 
 Los archivos generados quedan en **dist/MouseVirtual** y se excluyen de Git. La aplicación requiere la carpeta completa de distribución y no únicamente el ejecutable.
@@ -133,7 +139,13 @@ Los archivos generados quedan en **dist/MouseVirtual** y se excluyen de Git. La 
 
 **Experimental.** Funcionales: captura, persistencia, interfaz, simulación y envío de mensajes Win32. Pendientes: calibración en diferentes configuraciones de monitores, pruebas adicionales de GUI y verificación de compatibilidad real con aplicaciones que utilizan entrada exclusiva.
 
-Consulta el [documento de pendientes](docs/PENDING.md) para el estudio de Roblox y mejoras previstas. El proyecto **no** incluye ejecutables, archivos ni herramientas de ingeniería inversa de Roblox.
+Consulta el [documento de pendientes](docs/roadmap/README.md) para el estudio de Roblox y mejoras previstas. El proyecto **no** incluye ejecutables, archivos ni herramientas de ingeniería inversa de Roblox.
+
+## Licencia y contribuciones
+
+**Código fuente público con derechos reservados.** No es una licencia de software libre ni de código abierto bajo OSI. Consulta [LICENSE](LICENSE) para conocer los permisos limitados de evaluación y la necesidad de autorización para redistribuir o utilizar el proyecto comercialmente.
+
+Las contribuciones mediante issues y pull requests son bienvenidas bajo las condiciones de [CONTRIBUTING.md](CONTRIBUTING.md). La titularidad original del proyecto corresponde a su autor y los colaboradores conservan su propia autoría según los términos descritos.
 
 ## Autor
 
