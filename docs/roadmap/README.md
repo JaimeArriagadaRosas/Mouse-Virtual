@@ -82,3 +82,12 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - El panel informa resultados y fallas en texto. No tiene servidor remoto ni escucha comandos por red.
 - Prueba de interfaz con fixture Windows real, más pruebas de selección y enrutamiento con mocks.
 - Pendientes: política de autorización persistente, redacción de campos sensibles, evitar bloqueos temporales de Qt con UIA lento, UI asíncrona, empaquetado y MCP.
+
+## Undécima etapa — Seguridad de UIA y bloqueo de trabajo asíncrono
+
+- Implementado el contrato `DesktopScope` para identidad explícita de ventana (HWND, PID, clase); comprueba reemplazo, invalidez y minimización.
+- El adaptador UIA bloquea `ValuePattern` en campos marcados como contraseña, tanto escritura como lectura, y `inspect()` omite dichos controles y los valores de campos editables.
+- Tres tests unitarios nuevos: autorización, controles protegidos, e inspección redactada.
+- **Pendiente de integración:** `DesktopScope` todavía no está conectado a un diálogo de autorización de la GUI, que conserva el flujo de selección previo.
+- **Bloqueado:** se investigó el traslado de operaciones UIA a `QThread`. Las pruebas reales quedaron sin respuesta durante 15 segundos, pese a probar inicializaciones COM alternativas. Se restauró la GUI síncrona previamente aprobada. No se publicó el experimento fallido.
+- **Validación:** 66/66 pytest, con una advertencia conocida de pywinauto sobre COM. La UIA sigue ejecutándose síncronamente y puede bloquear temporalmente la GUI.

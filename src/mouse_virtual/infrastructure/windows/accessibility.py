@@ -47,6 +47,8 @@ class AccessibilitySession:
         control = self.find(auto_id=auto_id, name=name, control_type="Edit")
         if not control.is_enabled():
             raise PermissionError("Control is disabled")
+        if getattr(control.element_info,"is_password",False):
+            raise PermissionError("Protected control cannot be accessed")
         try:
             control.iface_value.SetValue(text)
         except (AttributeError, OSError) as exc:
@@ -61,6 +63,8 @@ class AccessibilitySession:
         control=self.find(auto_id=auto_id,name=name,control_type="Button")
         if not control.is_enabled():
             raise PermissionError("Control is disabled")
+        if getattr(control.element_info,"is_password",False):
+            raise PermissionError("Protected control cannot be accessed")
         try:
             control.iface_invoke.Invoke()
         except (AttributeError,OSError) as exc:
@@ -69,6 +73,25 @@ class AccessibilitySession:
 
     def read(self, *, auto_id="", name="", control_type="Text"):
         control=self.find(auto_id=auto_id,name=name,control_type=control_type)
+        if getattr(control.element_info,"is_password",False):
+            raise PermissionError("Protected control cannot be read")
         if control_type=="Edit":
             return {"text":control.iface_value.CurrentValue}
         return {"text":control.window_text()}
+
+    def inspect(self):
+        if self.root is None:
+            raise RuntimeError("Connect to a target first")
+        data=[]
+        for item in self.root.descendants():
+            info=item.element_info
+            if getattr(info,"control_type","") not in ("Edit","Button","Text"):
+                continue
+            if getattr(info,"is_password",False):
+                continue
+            auto_id=getattr(info,"automation_id","")
+            if not auto_id:continue
+            data.append({"id":auto_id,"type":info.control_type,
+                         "name":"" if info.control_type=="Edit" else item.window_text()[:100]})
+            if len(data)>=100:break
+        return data
