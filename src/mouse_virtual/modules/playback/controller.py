@@ -18,38 +18,68 @@ class PlaybackMixin:
         self.start_sequence_direct()
 
     def start_sequence_direct(self):
-        if self.running:return
-        self.action_mode='sequence'
-        self.input_mode=self.mode_combo.currentIndex()
-        self.target=self.target_combo.currentData()
-        if self.input_mode not in (0,1,2):raise ValueError('Modo inválido')
-        if not self.target:
-            self.report_error('Selecciona una ventana destino.');return
+        if self.running:
+            return
+        if not self.selected_sequence_id:
+            self.report_error("Selecciona una secuencia primero.")
+            return
         try:
-            data=self.store.get(self.selected_sequence_id)
-            self.active_plan=Plan([Step(**x) for x in data['steps']],0 if self.infinite_check.isChecked() else self.record_repeat.value())
-            self.active_plan.validate()
-            self.sent=0;self.start_time=time.monotonic();self.finished_elapsed=None
-            mode={0:'simulation',1:'win32',2:'global'}[self.mode_combo.currentIndex()]
-            if mode=='global':
-                if window_info(self.target)['pid']!=window_info(active_window())['pid']:
-                    self.report_error('El modo global requiere Roblox u otra ventana destino en primer plano.');return
-                answer=QMessageBox.warning(self,'Entrada física global','Este modo mueve tu mouse real y puede interferir con tu trabajo. ¿Iniciar?',QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
-                if answer!=QMessageBox.StandardButton.Yes:return
-            record_geom=data.get('geometry')
-            current=snapshot(self.target)
-            if record_geom:
-                condition=compare(record_geom,current)
-                self.session_log.write('GEOMETRY_CHECK',status=condition,recorded=record_geom,current=current)
-                if condition=='invalid':raise ValueError('Geometría inválida')
-            else:
-                self.session_log.write('GEOMETRY_CHECK',status='legacy',current=current)
-            self.playback.start(self.active_plan,self.target,mode=mode,recording_geometry=record_geom)
-            self.running=True
-            self.state.setText('●  Ejecutando');self.run_button.setText('■  Detener   F7')
-            self.summary.setText('Reproduciendo secuencia grabada')
-            self.session_log.write('GUI_START',mode='sequence',target=self.target,source='automation')
-        except Exception as exc:self.report_error(str(exc))
+            data = self.store.get(self.selected_sequence_id)
+            repeat = 0 if self.infinite_check.isChecked() else self.record_repeat.value()
+            plan = Plan([Step(**item) for item in data["steps"]], repeat)
+            self._begin_sequence(plan, recording_geometry=data.get("geometry"), source="automation")
+        except Exception as exc:
+            self.report_error(str(exc))
+
+    def _begin_sequence(self, plan, *, recording_geometry=None, source="editor"):
+        """Only entry point for recorded and manually edited sequence playback."""
+        if self.running:
+            return
+        try:
+            plan.validate()
+            index = self.mode_combo.currentIndex()
+            mode = {0: "simulation", 1: "win32", 2: "global"}.get(index)
+            if mode is None:
+                raise ValueError("Modo de reproducción inválido")
+            hwnd = self.target_combo.currentData()
+            if not hwnd:
+                raise ValueError("Selecciona una ventana destino en Automatización.")
+            if mode == "global":
+                target = window_info(hwnd)
+                foreground = window_info(active_window())
+                if target["pid"] != foreground["pid"]:
+                    raise ValueError("La entrada global requiere la ventana destino en primer plano.")
+                answer = QMessageBox.warning(
+                    self, "Entrada física global",
+                    "Este modo mueve el mouse real. ¿Deseas continuar?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                )
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
+            current = snapshot(hwnd)
+            condition = compare(recording_geometry, current) if recording_geometry else "legacy"
+            self.session_log.write(
+                "GEOMETRY_CHECK", status=condition,
+                recorded=recording_geometry, current=current,
+            )
+            if condition == "invalid":
+                raise ValueError("Geometría de grabación inválida")
+            # All validations happen before switching the GUI into running state.
+            self.playback.start(plan, hwnd, mode=mode, recording_geometry=recording_geometry)
+            self.active_plan = plan
+            self.action_mode = "sequence"
+            self.input_mode = index
+            self.target = hwnd
+            self.sent = 0
+            self.start_time = time.monotonic()
+            self.finished_elapsed = None
+            self.running = True
+            self.state.setText("●  Ejecutando")
+            self.run_button.setText("■  Detener   F7")
+            self.summary.setText("Reproduciendo secuencia")
+            self.session_log.write("GUI_START", mode="sequence", target=hwnd, source=source)
+        except Exception as exc:
+            self.report_error(str(exc))
 
     def start(self):
         if self.running:return
@@ -58,24 +88,26 @@ class PlaybackMixin:
             self.start_recorded();return
         if self.action_mode=='virtual':
             self.report_error('Selecciona Clicker, Teclado o Secuencias.');return
+        if self.action_mode == "sequence":
+            try:
+                plan = self.current_plan()
+            except Exception as exc:
+                self.report_error(str(exc))
+                return
+            self._begin_sequence(plan, source="editor")
+            return
         self.input_mode=self.mode_combo.currentIndex()
         self.target=self.target_combo.currentData()
-        if self.action_mode=="sequence":
-            try:self.active_plan=self.current_plan()
-            except Exception as exc:self.report_error(str(exc));return
-        if self.action_mode in ("clicker","sequence") and self.input_mode==0:
+        if self.action_mode == "clicker" and self.input_mode==0:
             if not self.target:self.report_error("Selecciona una ventana destino en Automatización.");return
             if self.action_mode=="clicker":
                 if choice(self.positions)==0:
                     self.report_error("Seguir cursor requiere Entrada global. Elige Punto fijo o Ventana.");return
                 if choice(self.positions)==1:
                     self.report_error("Punto fijo de pantalla requiere Entrada global; usa Ventana.");return
-        if self.action_mode=="sequence" and self.input_mode==2:
-            self.report_error("Secuencias globales aún no están disponibles; selecciona modo Win32.");return
         if self.action_mode=="keyboard" and self.input_mode!=2:
             self.report_error("El teclado actual utiliza entrada global; selecciona Entrada global.");return
-        delay=(self.interval_ms() if self.action_mode=="clicker" else
-               self.key_interval.value() if self.action_mode=="keyboard" else 50)
+        delay=self.interval_ms() if self.action_mode=="clicker" else self.key_interval.value()
         if delay<50:self.report_error("Intervalo mínimo: 50 ms.");return
         if self.action_mode=="clicker" and self.input_mode==2:
             answer=QMessageBox.warning(self,"Modo global","El modo global puede mover el puntero físico e interferir con otras aplicaciones. ¿Continuar?",
@@ -85,10 +117,7 @@ class PlaybackMixin:
         self.finished_elapsed=None
         self.sequence_cursor=0;self.sequence_repeated=0
         self.state.setText("●  Ejecutando");self.run_button.setText("■  Detener   F7")
-        if self.action_mode=='sequence':
-            try:self.playback.start(self.active_plan,self.target,mode='simulation' if self.input_mode==0 else 'win32',recording_geometry=None)
-            except Exception as exc:self.stop();self.report_error(str(exc));return
-        else:self.timer.start(delay)
+        self.timer.start(delay)
         self.session_log.write('GUI_START',mode=self.action_mode,target=self.target)
         self.summary.setText("Acciones enviadas, no equivalen a recepción confirmada.")
 
@@ -114,16 +143,6 @@ class PlaybackMixin:
             elif self.action_mode=="keyboard":
                 native_key(self.key.currentText());self.sent+=1
                 if self.sent>=self.key_count.value():self.stop()
-            elif self.action_mode=="sequence":
-                step=self.active_plan.steps[self.sequence_cursor]
-                if step.action=="click":
-                    post_click(self.target,step.x,step.y,step.button);self.sent+=1
-                    self.position_preview.update_step(step.x,step.y,*client_size(self.target),'POSTED_UNCONFIRMED')
-                self.sequence_cursor+=1
-                if self.sequence_cursor>=len(self.active_plan.steps):
-                    self.sequence_cursor=0;self.sequence_repeated+=1
-                    if self.sequence_repeated>=self.active_plan.repeat:self.stop();return
-                self.timer.start(max(50,step.delay_ms))
         except Exception as exc:
             self.stop();self.report_error(f"Ejecución detenida: {exc}")
 
