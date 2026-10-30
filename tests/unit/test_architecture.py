@@ -37,3 +37,6 @@ def test_packaged_theme_and_project_metadata():
     assert (ROOT / "pyproject.toml").is_file()
     assert (ROOT / "LICENSE").is_file()
     assert (ROOT / "CONTRIBUTING.md").is_file()
+
+def test_cursor_svg_resource_parses():
+    ET.parse(PKG / 'resources' / 'cursors' / 'black_pointer.svg')

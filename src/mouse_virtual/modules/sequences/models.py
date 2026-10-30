@@ -15,7 +15,7 @@ class Step:
 
     def validate(self):
         if self.action not in ALLOWED:raise ValueError("Accion no compatible")
-        if self.button not in ("left","right"):raise ValueError("Boton invalido")
+        if self.button not in ("left","right","middle"):raise ValueError("Boton invalido")
         if self.delay_ms<0 or self.delay_ms>3600000:raise ValueError("Pausa fuera de rango")
         if self.x<0 or self.y<0 or self.x>32767 or self.y>32767:raise ValueError("Coordenadas fuera de rango")
 

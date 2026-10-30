@@ -1,7 +1,9 @@
 """Embedded position preview. Never draws over the desktop."""
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter,QColor,QPen,QFont
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt,QRectF
+from PySide6.QtSvg import QSvgRenderer
+from pathlib import Path
 class PositionPreview(QWidget):
     def __init__(self,parent=None):
         super().__init__(parent)
@@ -10,6 +12,7 @@ class PositionPreview(QWidget):
         self.position=None
         self.size=(1,1)
         self.status="Sin acciones"
+        self.cursor_svg=QSvgRenderer(str(Path(__file__).resolve().parents[2]/"resources"/"cursors"/"black_pointer.svg"))
     def update_step(self,x,y,w,h,status):
         self.position=(int(x),int(y))
         self.size=(max(1,int(w)),max(1,int(h)))
@@ -25,10 +28,11 @@ class PositionPreview(QWidget):
             x,y=self.position;w,h=self.size
             px=bounds.left()+round(max(0,min(x,w))*bounds.width()/w)
             py=bounds.top()+round(max(0,min(y,h))*bounds.height()/h)
-            p.setPen(QPen(QColor("#00a97c"),2))
-            p.drawEllipse(px-9,py-9,18,18)
-            p.drawLine(px-15,py,px+15,py)
-            p.drawLine(px,py-15,px,py+15)
+            if self.cursor_svg.isValid():
+                self.cursor_svg.render(p,QRectF(px,py,16,20))
+            else:
+                p.setPen(QPen(QColor("#111111"),2))
+                p.drawEllipse(px-5,py-5,10,10)
         p.setPen(QColor("#56647c"))
         p.setFont(QFont("Segoe UI",9))
         label=self.status

@@ -7,7 +7,7 @@ from mouse_virtual.app.ui_helpers import btn, label, spin
 class VirtualCursorMixin:
     def virtual_page(self):
         pane,col=self.pane("Mouse virtual","Cursor independiente para acciones compatibles en segundo plano")
-        col.addWidget(label("El cursor verde es visual. Solo las entradas dirigidas a ventana son independientes del mouse real.","muted"))
+        col.addWidget(label("El cursor negro es visual. Solo las entradas dirigidas a ventana son independientes del mouse real.","muted"))
         line=QWidget();r=QHBoxLayout(line);r.setContentsMargins(0,0,0,0)
         r.addWidget(btn("Mostrar cursor",self.preview));r.addWidget(btn("Ocultar cursor",lambda: (setattr(self.position_preview, 'position', None), self.position_preview.update())));r.addStretch()
         col.addWidget(line)
