@@ -1,0 +1,77 @@
+/* Mouse Virtual v0.6 — complete standalone Qt stylesheet */
+QWidget { font-family: "Segoe UI"; font-size: 12px; color: #23314b; background: #f7f8fa; }
+QMainWindow, QWidget#root, QFrame#contentPane { background: #f7f8fa; border: 0; }
+QFrame#topbar { background: #ffffff; border: 0; border-bottom: 1px solid #e3e8f0; }
+QLabel { background: transparent; }
+QLabel#logo { color: #17253e; font-size: 19px; font-weight: 750; }
+QLabel#automationHeading { color: #14213a; font-size: 24px; font-weight: 750; }
+QLabel#automationSubtitle { color: #758198; font-size: 12px; }
+QLabel#sectionTitle { color: #17253e; font-size: 17px; font-weight: 700; }
+QLabel#sectionInfo, QLabel#muted, QLabel#tagline { color: #8490a2; font-size: 11px; }
+QLabel#fieldLabel { color: #35435c; font-size: 12px; font-weight: 550; }
+QFrame#separator { background: #e5e8ee; border: 0; max-height: 1px; min-height: 1px; }
+QPushButton { background: #ffffff; color: #24344c; border: 1px solid #d8dfe9; border-radius: 8px; min-height: 26px; padding: 7px 12px; }
+QPushButton:hover { background: #edf3fc; border-color: #acc3ed; }
+QPushButton:pressed { background: #dfe9fc; }
+QPushButton:disabled { color: #aab3c3; background: #f1f3f7; }
+QPushButton#tab { background: transparent; border: none; color: #4e5b70; padding: 10px 13px; border-radius: 9px; }
+QPushButton#tab:checked { background: #e6efff; border: 1px solid #d7e5fe; color: #14243c; font-weight: 700; }
+QPushButton#tab:hover { background: #eef3fb; }
+QPushButton#segment { background: #edf0f4; border-color: transparent; }
+QPushButton#segment:checked { background: #ffffff; border-color: #d2dbe7; font-weight: 700; }
+QPushButton#subtle { background: #ffffff; }
+QSpinBox, QComboBox, QLineEdit {
+ background: white; color: #24344c; border: 1px solid #d6dfeb;
+ border-radius: 8px; min-height: 27px; padding: 5px 9px;
+ selection-background-color: #bfd6fd;
+}
+QSpinBox:focus, QComboBox:focus, QLineEdit:focus { border-color: #5e94eb; }
+QComboBox::drop-down { border: 0; width: 24px; }
+QComboBox QAbstractItemView { background: white; selection-background-color: #dce9ff; }
+QFrame#automationPage, QWidget#automationCanvas, QScrollArea#automationScroll {
+ background: #f7f8fa; border: 0;
+}
+QFrame#sectionCard { background: #ffffff; border: 1px solid #dde5f0; border-radius: 11px; }
+QFrame#sectionCard QLabel { background: transparent; }
+QFrame#sectionCard QLabel#cardHeading { color: #192943; font-size: 13px; font-weight: 700; }
+QFrame#sectionCard QLabel#fieldLabel, QFrame#sectionCard QLabel#compactFieldLabel { color: #35465e; font-size: 12px; }
+QFrame#sectionCard QLabel#smallInfo { color: #7f8ca3; font-size: 11px; }
+QFrame#sectionCard QLineEdit#automationInput,
+QFrame#sectionCard QComboBox#automationInput,
+QFrame#sectionCard QSpinBox#automationInput {
+ background: #ffffff; border: 1px solid #d8e0eb; border-radius: 8px;
+ color: #192840; min-height: 26px; padding: 5px 9px;
+}
+QFrame#sectionCard QPushButton { background: #fafbfe; color: #263651; border: 1px solid #d6dfea; border-radius: 8px; min-height: 24px; padding: 6px 8px; font-size: 12px; }
+QFrame#sectionCard QPushButton#primaryAction { background: #2466ee; color: #ffffff; border: 1px solid #2466ee; font-weight: 700; }
+QFrame#sectionCard QPushButton#primaryAction:hover { background: #1853cd; }
+QFrame#sectionCard QPushButton#softStop { background: #fcecef; color: #8b2632; border-color: #f3dce0; font-weight: 700; }
+QFrame#sectionCard QPushButton#recordAction { background: #f9fbff; color: #2e3c55; }
+QFrame#sectionCard QPushButton:disabled { background: #f0f2f6; color: #adb6c5; border-color: #e1e6ee; }
+QTableWidget, QTableWidget#sequencePreview {
+ background: #ffffff; alternate-background-color: #f6f9ff; color: #26344a;
+ border: 1px solid #dfe5ef; border-radius: 7px; gridline-color: #edf0f5;
+ selection-background-color: #d7e7fc; selection-color: #172640;
+}
+QHeaderView::section { background: #eef2f8; color: #334259; font-size: 11px; font-weight: 650; border: 0; border-bottom: 1px solid #dce3ed; padding: 6px; }
+QTableWidget::item { padding: 3px; }
+QCheckBox { background: transparent; spacing: 7px; }
+QCheckBox::indicator { width: 18px; height: 18px; }
+QFrame#runPanel { background: #191b20; border: 1px solid #242934; border-radius: 20px; min-width: 360px; max-width: 420px; }
+QFrame#runPanel QLabel { color: #f7f8fa; background: transparent; }
+QFrame#runPanel QLabel#runMuted { color: #a7adbb; font-size: 11px; }
+QFrame#runPanel QLabel#runState { color: #aee8c9; font-size: 12px; }
+QFrame#runPanel QLabel#counter { color: #ffffff; font-size: 57px; font-weight: 750; }
+QFrame#runPanel QLabel#rate { color: #ffffff; font-size: 16px; font-weight: 650; }
+QFrame#runPanel QFrame#separator { background: #3a3f4c; }
+QFrame#runPanel QPushButton#start { background: #f7f7f4; color: #101522; border: 0; border-radius: 12px; font-size: 15px; font-weight: 750; min-height: 45px; }
+QFrame#runPanel QPushButton#start:hover { background: #dfe7f1; }
+QFrame#runPanel QPushButton#stop { background: #67383e; color: #ffffff; border: 0; border-radius: 12px; font-weight: 700; min-height: 40px; }
+QFrame#runPanel QPushButton#stop:hover { background: #8c4049; }
+QToolTip { color: #f8fafc; background: #202631; border: none; padding: 6px; }
+
+QFrame#sectionCard QWidget { background-color: transparent; }
+QFrame#sectionCard QComboBox#automationInput, QFrame#sectionCard QLineEdit#automationInput, QFrame#sectionCard QSpinBox#automationInput { background-color: #ffffff; }
+QFrame#sectionCard QPushButton#primaryAction { background-color: #2466ee; color: #ffffff; border-color: #2466ee; }
+QFrame#sectionCard QPushButton#softStop { background-color: #fcecef; color: #8b2632; border-color: #f3dce0; }
+QFrame#sectionCard QTableWidget#sequencePreview { background-color: #ffffff; }
