@@ -109,6 +109,8 @@ Los archivos locales del usuario no se incluyen en este repositorio.
 
 ## Pruebas
 
+Las pruebas están separadas en `tests/unit`, `tests/integration`, `tests/gui` y `tests/labs`; consulta la [guía de pruebas](docs/testing/README.md) para decidir dónde añadir cada escenario.
+
 ~~~powershell
 .\.venv\Scripts\python.exe -m pytest -q tests
 .\.venv\Scripts\python.exe scripts/input_receiver_lab.py
