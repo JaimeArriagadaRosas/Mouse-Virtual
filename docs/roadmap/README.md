@@ -91,3 +91,12 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - **Pendiente de integración:** `DesktopScope` todavía no está conectado a un diálogo de autorización de la GUI, que conserva el flujo de selección previo.
 - **Bloqueado:** se investigó el traslado de operaciones UIA a `QThread`. Las pruebas reales quedaron sin respuesta durante 15 segundos, pese a probar inicializaciones COM alternativas. Se restauró la GUI síncrona previamente aprobada. No se publicó el experimento fallido.
 - **Validación:** 66/66 pytest, con una advertencia conocida de pywinauto sobre COM. La UIA sigue ejecutándose síncronamente y puede bloquear temporalmente la GUI.
+
+## Etapa XII — CLI remoto como función principal
+
+- Se creó `remote_cli.py` para listar ventanas, inspeccionar controles y ejecutar planes JSON de hasta 20 acciones sin iniciar la GUI.
+- Se aplica `DesktopScope` antes de cada operación. El llamador declara `--authorize-hwnd`, que debe corresponder al HWND destinatario; no constituye una barrera de autenticación propia.
+- Acciones permitidas: encontrar control, escribir, invocar, leer, esperar texto. La espera verifica el resultado final antes de declarar éxito.
+- Cinco pruebas nuevas: contrato de autorización y plan, cambios de identidad, inspección y búsqueda completa en la ventana real de laboratorio. **71 tests aprobados**.
+- Pendiente: política de permisos por aplicación, timeout duro de proceso desde el llamador, control de datos sensibles en lecturas y compatibilidad real con otros programas. La GUI existente no se modificó.
+- Guía en `docs/features/agent-remote-cli.md`.

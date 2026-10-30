@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from urllib.parse import urlparse
-ALLOWED_ACTIONS={"browser.open","browser.find_element","browser.fill","browser.click","browser.read_page","browser.search","desktop.find_control","desktop.fill","desktop.invoke","desktop.read_control"}
+ALLOWED_ACTIONS={"browser.open","browser.find_element","browser.fill","browser.click","browser.read_page","browser.search","desktop.find_control","desktop.fill","desktop.invoke","desktop.read_control","desktop.wait_text"}
 @dataclass(frozen=True)
 class Command:
     action:str
