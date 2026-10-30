@@ -52,3 +52,11 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - Se comprueba el PID de la ventana que recibe el foco antes del inicio del clicker global y antes de cada envío; si cambia, se aborta sin enviar nuevos clics. Las pruebas de transición de foco sustituyen las API de entrada con dobles y no mueven el puntero físico. La validación por PID no sustituye una política estricta por HWND, pendiente.
 - Se añadió `scripts/benchmark_click_worker.py`, que mide el hilo ejecutor sin entrada real. Resultado reproducible y límites en `docs/testing/performance.md`.
 - 47 pruebas automatizadas aprobadas. Pendientes: seguridad de foco HWND estricto, ensayos de carga prolongada, escenarios de monitor, integración UI Automation y desacoplamiento de mixins.
+
+## Protección HWND exacta y pruebas de geometría
+
+- Implementado `infrastructure/windows/focus_guard.py`: comprobación de ventana foreground exacta, PID, validez y estado minimizado antes de cada grupo de entrada global. La comprobación por PID únicamente era insuficiente para procesos con varias ventanas.
+- 5 tests de guardia, 2 tests de carga/cancelación y geometría; **54 tests aprobados** en total.
+- Carga: se verificó la cancelación antes de emitir entradas sobre un presupuesto de 10.000 clics. **No** equivale a ejecutar 10.000 clics reales ni prueba estabilidad prolongada.
+- Geometría: límites de transformación de 1920x1080 a 1280x720 y detección de dimensiones inválidas.
+- Pendientes: DPI real y múltiples monitores físicos, carreras de foco durante `SendInput`, más ensayos prolongados y el adaptador UI Automation.

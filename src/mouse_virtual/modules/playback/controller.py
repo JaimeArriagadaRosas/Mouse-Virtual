@@ -5,6 +5,7 @@ import queue
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt
 from mouse_virtual.modules.clicker.worker import ClickWorker
+from mouse_virtual.infrastructure.windows.focus_guard import ForegroundGuard
 from mouse_virtual.infrastructure.geometry import compare, snapshot
 from mouse_virtual.infrastructure.windows.handles import client_size, client_to_screen
 from mouse_virtual.infrastructure.windows.input import native_click, native_key, post_click
@@ -148,13 +149,10 @@ class PlaybackMixin:
         hwnd=self.target
         x,y=self.x.value(),self.y.value()
         position=choice(self.positions)
-        expected_pid = None
+        guard = None
         if mode == 2:
-            if not hwnd or not window_info(hwnd).get("valid",True):
-                raise ValueError("Global input requires a valid target window")
-            expected_pid = window_pid(hwnd)
-            if not expected_pid or window_pid(active_window()) != expected_pid:
-                raise ValueError("Global input requires target foreground before starting")
+            guard = ForegroundGuard(hwnd, window_pid(hwnd), active_window, window_info)
+            guard.require_target()
         if mode == 1 and position != 2:
             raise ValueError("El modo Win32 dirigido requiere posición de ventana")
         events=queue.SimpleQueue()
@@ -170,8 +168,7 @@ class PlaybackMixin:
                 post_click(hwnd,x,y,button,count)
                 return {"status":"POSTED_UNCONFIRMED","count":count,"x":x,"y":y}
             if mode==2:
-                if not hwnd or window_pid(active_window()) != expected_pid:
-                    raise RuntimeError("Target lost foreground; global input cancelled")
+                guard.require_target()
                 if position==0:
                     point=None
                 elif position==1:
