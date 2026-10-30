@@ -12,8 +12,9 @@ logs/
 .env
 .env.*
 settings.json
-sequences/
+/sequences/
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
