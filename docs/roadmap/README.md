@@ -32,3 +32,10 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - **Validación:** 40 pruebas pytest, smoke de cinco vistas y prueba GUI E2E.
 - **Pendiente:** sacar el temporizador de ejecución del hilo de interfaz si las mediciones bajo carga lo justifican; medir frecuencia y recepción en el motor efectivo, así como CPU, memoria, cancelación y cambio de ventanas.
 - **No se cambió** el mínimo de 50 ms. El rendimiento real de la aplicación destino no está demostrado.
+
+## Hilo independiente de clicker — desarrollo experimental
+
+- Nuevo módulo `src/mouse_virtual/modules/clicker/worker.py`: `ClickWorker` ejecuta el reloj monotónico en hilo propio, permite límite finito o ilimitado, grupo simple/doble, interrupción durante espera y errores de adaptador.
+- La función de envío se inyecta (no incluye acoplamiento con Qt ni llamadas globales). Las pruebas usan exclusivamente callbacks simulados.
+- **Todavía no está conectado al botón Iniciar de la GUI.** El clicker de escritorio conserva Qt PreciseTimer hasta que exista una cola de eventos segura entre hilos, se congele el destino al comenzar y se prueben controles, cancelación, métricas y no interferencia.
+- Validación: 43 pruebas pytest aprobadas (3 pruebas nuevas del worker); GUI E2E aprobada. No se cambió mínimo de 50 ms.
