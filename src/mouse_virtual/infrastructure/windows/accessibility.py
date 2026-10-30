@@ -24,12 +24,19 @@ class AccessibilitySession:
             raise RuntimeError("Connect to a target first")
         if not auto_id and not name:
             raise ValueError("Specify an automation ID or accessible name")
-        params = {"control_type":control_type}
-        if auto_id:
-            params["auto_id"] = auto_id
-        if name:
-            params["title"] = name
-        matches = self.root.descendants(**params)
+        # pywinauto descendants does not accept auto_id on every backend.
+        # Filter by the UIA element metadata after selecting control type.
+        candidates=self.root.descendants(control_type=control_type)
+        matches=[]
+        for candidate in candidates:
+            info=getattr(candidate,"element_info",None)
+            candidate_id=getattr(info,"automation_id","")
+            candidate_name=candidate.window_text()
+            if auto_id and candidate_id!=auto_id:
+                continue
+            if name and candidate_name!=name:
+                continue
+            matches.append(candidate)
         if len(matches) != 1:
             raise LookupError(f"Expected one matching control, found {len(matches)}")
         return matches[0]
@@ -48,3 +55,20 @@ class AccessibilitySession:
         if actual != text:
             raise RuntimeError("Value verification failed")
         return {"filled": True, "length": len(text), "verified": True}
+
+
+    def invoke(self, *, auto_id="", name=""):
+        control=self.find(auto_id=auto_id,name=name,control_type="Button")
+        if not control.is_enabled():
+            raise PermissionError("Control is disabled")
+        try:
+            control.iface_invoke.Invoke()
+        except (AttributeError,OSError) as exc:
+            raise RuntimeError("Control does not support UIA InvokePattern") from exc
+        return {"invoked":True}
+
+    def read(self, *, auto_id="", name="", control_type="Text"):
+        control=self.find(auto_id=auto_id,name=name,control_type=control_type)
+        if control_type=="Edit":
+            return {"text":control.iface_value.CurrentValue}
+        return {"text":control.window_text()}

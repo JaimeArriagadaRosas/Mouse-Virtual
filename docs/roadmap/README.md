@@ -67,3 +67,10 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - Dependencia opcional `pywinauto` declarada como extra `desktop`, instalada solo en entorno virtual.
 - Tres pruebas unitarias nuevas con controles simulados: selección única, rechazo de ambigüedades y rechazo de controles deshabilitados. **57 pruebas aprobadas**.
 - Limitación expresa: todavía no se integró al CLI del agente ni se hizo una prueba real de ValuePattern contra una ventana Windows. El diseño no utiliza SendInput ni teclado global como fallback.
+## Integración UI Automation nativa y CLI (etapa IX)
+
+- **Probado en Windows real:** fixture PySide6 propio con un control de búsqueda, botón e indicador de resultado. El adaptador UIA encuentra el control por AutomationId, escribe mediante ValuePattern, invoca el botón mediante InvokePattern y verifica el texto después de que la aplicación procese el evento.
+- **Comando:** `python -m mouse_virtual.modules.agent_control.desktop_cli --hwnd HWND --action search --auto-id QApplication.QWidget.search_input --name Buscar --result-id QApplication.QWidget.search_result --text perritos`
+- Se añadió `modules/agent_control/desktop.py` y soporte de comandos `desktop.find_control`, `desktop.fill`, `desktop.invoke` y `desktop.read_control`.
+- Pruebas de integración: apertura real de ventana y ejecución CLI de extremo a extremo; se mantienen separadas de los tests unitarios.
+- **Limitaciones:** API local, no está en la GUI ni en MCP; para operar aplicaciones reales, el usuario debe autorizar explícitamente la ventana; no todos los controles exponen ValuePattern/InvokePattern. No se usa SendInput ni teclado global.

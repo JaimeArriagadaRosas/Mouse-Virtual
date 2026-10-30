@@ -5,8 +5,12 @@ class FakeValue:
     def __init__(self):self.CurrentValue=""
     def SetValue(self,value):self.CurrentValue=value
 class FakeControl:
-    def __init__(self,enabled=True):self.iface_value=FakeValue();self.enabled=enabled
+    def __init__(self,enabled=True):
+        from types import SimpleNamespace
+        self.iface_value=FakeValue();self.enabled=enabled
+        self.element_info=SimpleNamespace(automation_id="search")
     def is_enabled(self):return self.enabled
+    def window_text(self):return ""
 class FakeRoot:
     def __init__(self,controls):self.controls=controls
     def descendants(self,**kwargs):return self.controls
