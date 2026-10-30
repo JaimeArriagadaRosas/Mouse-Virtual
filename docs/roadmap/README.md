@@ -46,3 +46,9 @@ Detalles en [alcance de ejecución](EXECUTION_20261030.md) y [rendimiento](../te
 - **Seguridad:** configuración de destino/botón/coordenadas capturada al inicio, cancelación del worker en Detener y cierre, descarte de eventos de ejecuciones anteriores.
 - **Validación:** 45 pruebas pytest, incluida cancelación antes del primer clic y eventos atrasados. Smoke de 5 pestañas y GUI E2E aprobados.
 - **Pendiente:** perfiles prolongados bajo carga real, interferencia con aplicaciones externas, control de cambios de foco en modo global, y mejorar la separación de mixins. El intervalo mínimo sigue siendo 50 ms.
+
+## Seguridad del modo global y diagnóstico real de scheduling
+
+- Se comprueba el PID de la ventana que recibe el foco antes del inicio del clicker global y antes de cada envío; si cambia, se aborta sin enviar nuevos clics. Las pruebas de transición de foco sustituyen las API de entrada con dobles y no mueven el puntero físico. La validación por PID no sustituye una política estricta por HWND, pendiente.
+- Se añadió `scripts/benchmark_click_worker.py`, que mide el hilo ejecutor sin entrada real. Resultado reproducible y límites en `docs/testing/performance.md`.
+- 47 pruebas automatizadas aprobadas. Pendientes: seguridad de foco HWND estricto, ensayos de carga prolongada, escenarios de monitor, integración UI Automation y desacoplamiento de mixins.

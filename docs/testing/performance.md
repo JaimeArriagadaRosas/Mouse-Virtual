@@ -36,3 +36,7 @@ Se agregó la prueba repetible scripts/input_receiver_lab.py --stress-clicks 100
 - El programador usa actualmente `QTimer.PreciseTimer`; `ScheduleMetrics` mide la diferencia entre el instante observado y el tiempo ideal según el intervalo. La cola de eventos de Qt, la carga del sistema y los adaptadores afectan la precisión real.
 - `CLICKER_STEP` y `CLICKER_SCHEDULE` se registran para diagnóstico. Ni estos registros ni el contador prueban la recepción en aplicaciones externas.
 - La prueba GUI verifica modo simulado sin eventos de OS y el límite impar de 5 clics, con conteo de llamadas [2, 2, 1].
+
+## ClickWorker real: benchmark de 100 acciones (2026-10-30)
+
+La prueba `scripts/benchmark_click_worker.py --count 100 --interval 50` ejecuta el hilo real y un callback simulado; no envía entrada a Windows. Se completaron **100/100 acciones** en 5,012 s (19,951/s). Intervalos observados: p50=46,874 ms, p95=62,640 ms, p99=63,466 ms. Desviación p95=15,041 ms y máxima=16,426 ms. Pico de asignaciones Python medido por tracemalloc=19.780 bytes (no equivale a memoria total del proceso). Una única ejecución no demuestra estabilidad sostenida.
