@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Mouse Virtual · Existing Tab",
+  "version": "0.2.0",
+  "description": "User-authorized virtual pointer and typing in one selected existing tab; no global desktop input.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "debugger",
+    "tabs",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "worker.js"
+  },
+  "action": {
+    "default_title": "Mouse Virtual",
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' ws://127.0.0.1:8765"
+  }
+}

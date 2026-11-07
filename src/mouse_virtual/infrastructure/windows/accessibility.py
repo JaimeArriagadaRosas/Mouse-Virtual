@@ -60,6 +60,14 @@ class AccessibilitySession:
 
 
     def invoke(self, *, auto_id="", name=""):
+        # Regression guard: invoking an inactive Chromium button via Windows
+        # UI Automation activates the browser and steals OS foreground focus.
+        # Route this case through the explicitly paired existing-tab connector.
+        from mouse_virtual.modules.recording.recorder import active_window, window_info
+        info = window_info(self.hwnd)
+        if str(info.get("class", "")).startswith(("Chrome_WidgetWin", "MozillaWindowClass")):
+            if int(active_window() or 0) != self.hwnd:
+                raise PermissionError("Background browser invoke would steal focus; use the existing-tab connector")
         control=self.find(auto_id=auto_id,name=name,control_type="Button")
         if not control.is_enabled():
             raise PermissionError("Control is disabled")

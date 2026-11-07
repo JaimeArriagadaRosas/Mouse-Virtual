@@ -2,6 +2,7 @@
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from mouse_virtual.infrastructure.windows.handles import client_size
 from mouse_virtual.infrastructure.windows.input import post_click
+from mouse_virtual.modules.recording.recorder import window_info, active_window
 from mouse_virtual.app.ui_helpers import btn, label, spin
 
 class VirtualCursorMixin:
@@ -37,6 +38,9 @@ class VirtualCursorMixin:
         hwnd=self.target_combo.currentData()
         if not hwnd:self.report_error("Selecciona una ventana.");return
         try:
+            info = window_info(hwnd)
+            if str(info.get("class", "")).startswith("Chrome_WidgetWin") and active_window() != hwnd:
+                raise PermissionError("Para Chrome en segundo plano, utiliza la sección Pestaña existente.")
             post_click(hwnd,self.vx.value(),self.vy.value())
             self.preview();self.summary.setText('Clic Win32 enviado; recepción no confirmada')
         except Exception as exc:self.report_error(str(exc))

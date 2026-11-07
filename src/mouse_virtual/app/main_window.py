@@ -9,6 +9,7 @@ from mouse_virtual.modules.sequences.repository import SequenceStore
 
 from mouse_virtual.modules.clicker.controller import ClickerMixin
 from mouse_virtual.modules.agent_control.controller import AgentPanelMixin
+from mouse_virtual.modules.existing_tab.controller import ExistingTabMixin
 from mouse_virtual.modules.keyboard.controller import KeyboardMixin
 from mouse_virtual.modules.sequences.controller import SequencesMixin
 from mouse_virtual.modules.sequences.view import SequencePageMixin
@@ -19,7 +20,7 @@ from mouse_virtual.modules.automation.controller import AutomationMixin
 from mouse_virtual.app.settings_controller import SettingsMixin
 from mouse_virtual.app.ui_layout import LayoutMixin
 
-class Main(AgentPanelMixin, ClickerMixin, KeyboardMixin, SequencePageMixin, SequencesMixin, RecordingMixin, PlaybackMixin, VirtualCursorMixin, AutomationMixin, SettingsMixin, LayoutMixin, QMainWindow):
+class Main(ExistingTabMixin, AgentPanelMixin, ClickerMixin, KeyboardMixin, SequencePageMixin, SequencesMixin, RecordingMixin, PlaybackMixin, VirtualCursorMixin, AutomationMixin, SettingsMixin, LayoutMixin, QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Mouse Virtual")
@@ -58,7 +59,10 @@ class Main(AgentPanelMixin, ClickerMixin, KeyboardMixin, SequencePageMixin, Sequ
         self.tray.setContextMenu(menu)
         self.tray.activated.connect(lambda reason:self.restore_window() if reason==QSystemTrayIcon.ActivationReason.DoubleClick else None)
         self.tray.show()
+        # Reuse an existing bridge, or start a hidden one. Does not launch Chrome.
+        QTimer.singleShot(400, self.tab_start_bridge)
     def closeEvent(self,event):
+        self.tab_stop_bridge()
         self.tray.hide()
         self.session_log.write('APP_EXIT')
         self.playback.stop()

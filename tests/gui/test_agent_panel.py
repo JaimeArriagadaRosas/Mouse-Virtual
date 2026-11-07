@@ -7,7 +7,8 @@ def test_sixth_tab_contains_agent_controls():
     app=QApplication.instance() or QApplication([])
     window=Main()
     try:
-        assert len(window.tabs)==6
+        assert len(window.tabs)==7
+        assert window.tabs[6].text()=="Pestaña existente"
         window.show_page(5)
         assert window.mode=="agent"
         assert window.agent_windows.objectName()=="agentWindows"

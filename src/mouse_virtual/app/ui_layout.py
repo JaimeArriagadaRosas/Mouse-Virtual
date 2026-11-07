@@ -51,7 +51,7 @@ class LayoutMixin:
         hl=QHBoxLayout(header);hl.setContentsMargins(24,14,24,14)
         hl.addWidget(label("◈  Mouse Virtual","logo"));hl.addSpacing(18)
         self.tabs=[]
-        for i,title in enumerate(["Clicker","Teclado","Secuencias","Mouse virtual","Automatización","Agente IA"]):
+        for i,title in enumerate(["Clicker","Teclado","Secuencias","Mouse virtual","Automatización","Agente IA","Pestaña existente"]):
             w=btn(title,lambda checked=False,index=i:self.show_page(index),"tab");w.setCheckable(True)
             self.tabs.append(w);hl.addWidget(w)
         hl.addStretch()
@@ -59,7 +59,7 @@ class LayoutMixin:
         outer.addWidget(header)
         body=QHBoxLayout();body.setContentsMargins(28,22,24,18);body.setSpacing(24)
         self.stack=QStackedWidget()
-        for view in [self.clicker_page(),self.keyboard_page(),self.sequence_page(),self.virtual_page(),self.automation_page(),self.agent_page()]:
+        for view in [self.clicker_page(),self.keyboard_page(),self.sequence_page(),self.virtual_page(),self.automation_page(),self.agent_page(),self.existing_tab_page()]:
             self.stack.addWidget(view)
         body.addWidget(self.stack,stretch=1)
         body.addWidget(self.run_panel(),stretch=0,alignment=Qt.AlignmentFlag.AlignTop)
@@ -115,7 +115,7 @@ class LayoutMixin:
     def show_page(self,index):
         self.stack.setCurrentIndex(index)
         for i,tab in enumerate(self.tabs):tab.setChecked(i==index)
-        self.mode=["clicker","keyboard","sequence","virtual","automation","agent"][index]
+        self.mode=["clicker","keyboard","sequence","virtual","automation","agent","existing-tab"][index]
         if index==4 and self.selected_sequence_id:
             try:
                 data=self.store.get(self.selected_sequence_id)

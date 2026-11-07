@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mouse Virtual</title>
+<style>
+body{font:13px system-ui,sans-serif;margin:16px;width:330px;color:#17202f}
+h1{font-size:17px;margin:0 0 12px}label{display:block;font-size:12px;margin-bottom:5px}
+input[type=password]{box-sizing:border-box;width:100%;padding:9px;border:1px solid #aaa;border-radius:6px;font-family:monospace}
+button{margin-top:10px;padding:9px 12px;border:0;border-radius:7px;background:#26364f;color:#fff;cursor:pointer;width:100%}
+button.secondary{background:#e5e8ed;color:#152239}
+#status{margin-top:12px;white-space:pre-line;font-size:12px;line-height:1.5}
+small{display:block;margin-top:10px;color:#526078}
+.checkbox{display:flex;align-items:center;gap:8px;margin-top:12px}
+</style></head><body>
+<h1>Mouse Virtual · Pestaña existente</h1>
+<label for="token">Código local (solo en el primer emparejamiento)</label>
+<input id="token" autocomplete="off" spellcheck="false"
+placeholder="No se necesita tras emparejar" type="password">
+<div class="checkbox"><input type="checkbox" id="automatic" checked>
+<label for="automatic">Reconectar y seguir una pestaña inactiva del mismo sitio si se cierra la anterior</label></div>
+<button id="connect">Controlar esta pestaña</button>
+<button id="reconnect" class="secondary">Comprobar y reconectar</button>
+<button id="disconnect" class="secondary">Revocar conexión</button>
+<div id="status" role="status">Comprobando…</div>
+<small>Solo funciona en páginas web HTTP(S). No abre Chrome ni mueve el cursor físico. Chrome puede mostrar el aviso de depuración.</small>
+<script src="popup.js"></script>
+</body></html>

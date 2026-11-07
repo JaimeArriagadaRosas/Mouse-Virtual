@@ -19,3 +19,6 @@ settings.json
 .DS_Store
 Thumbs.db
 
+
+# Local Python build metadata, never part of published source
+*.egg-info/

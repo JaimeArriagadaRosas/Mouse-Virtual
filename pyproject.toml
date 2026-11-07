@@ -13,13 +13,17 @@ dependencies = ["PySide6>=6.7,<7"]
 test = ["pytest>=8,<10"]
 build = ["pyinstaller>=6,<7"]
 browser = ["playwright>=1.50,<2"]
+existing-tab = ["websockets>=14,<17"]
 desktop = ["pywinauto>=0.6.9,<0.7"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-mouse_virtual = ["resources/*.qss", "resources/cursors/*.svg"]
+mouse_virtual = ["resources/*.qss", "resources/cursors/*.svg",
+                 "infrastructure/browser/existing_tab_extension/*.js",
+                 "infrastructure/browser/existing_tab_extension/*.json",
+                 "infrastructure/browser/existing_tab_extension/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
