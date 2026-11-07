@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Mouse Virtual · Existing Tab",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "User-authorized virtual pointer and typing in one selected existing tab; no global desktop input.",
   "minimum_chrome_version": "116",
   "permissions": [
     "debugger",
     "tabs",
     "storage",
-    "alarms"
+    "alarms",
+    "tabGroups"
   ],
   "host_permissions": [
     "http://127.0.0.1/*"

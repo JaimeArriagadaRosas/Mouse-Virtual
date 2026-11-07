@@ -147,3 +147,28 @@ def test_bridge_heartbeats_and_selected_tab_status():
                 assert status[0]["result"]["connected"]
                 assert status[0]["result"]["tab_id"] == 401
     asyncio.run(run())
+
+
+def test_workspace_browser_tab_commands_are_scoped_to_approved_hosts():
+    assert validate_command({"action":"tab.list"}) == {"action":"tab.list"}
+    for action in ("workspace.create", "workspace.open"):
+        with pytest.raises(PermissionError):
+            validate_command({"action":action,"url":"https://example.org/demo"},
+                             allow_writes=True,allow_hosts=["elsewhere.org"])
+        assert validate_command({"action":action,"url":"https://example.org/demo"},
+                                allow_writes=True,allow_hosts=["example.org"])["action"]==action
+        with pytest.raises(PermissionError):
+            validate_command({"action":action,"url":"https://example.org/demo"},
+                             allow_writes=False,allow_hosts=["example.org"])
+    for action in ("workspace.select", "workspace.close"):
+        assert validate_command({"action":action,"tabId":512},
+                                allow_writes=True)["tabId"] == 512
+        with pytest.raises(ValueError):
+            validate_command({"action":action,"tabId":-1},allow_writes=True)
+    with pytest.raises(PermissionError):
+        validate_command({"action":"tab.select_id","tabId":512,"host":"example.org"},
+                         allow_writes=True)
+    assert validate_command({"action":"tab.select_id","tabId":512,"host":"example.org"},
+                            allow_writes=True,allow_hosts=["example.org"])["tabId"]==512
+    with pytest.raises(ValueError):
+        validate_command({"action":"tab.list","windowId":999},allow_writes=True)

@@ -103,3 +103,46 @@ normal de depuración, que no se intenta ocultar.
 Si el usuario revoca la conexión de Chrome o abre DevTools sobre la misma
 pestaña y reemplaza al depurador, la extensión respeta esa decisión y no
 vuelve a conectarse silenciosamente.
+
+## Espacio de trabajo de multiples pestañas (Chrome existente)
+
+La extension puede gestionar un grupo propio de pestañas dentro del Chrome que
+el usuario ya tiene abierto. No lanza un segundo Chrome ni otro perfil, y
+crea las pestañas del grupo inactivas para no interferir con el usuario.
+
+Acciones genéricas del controlador:
+
+- tab.list: inventario de pestañas regulares con ID, título, URL, grupo y estado.
+- tab.select_id: elegir una pestaña existente inactiva por ID y host autorizado.
+- workspace.create: crear el grupo Mouse Virtual y abrir la primera pestaña.
+- workspace.open: abrir una nueva pestaña inactiva dentro del grupo existente.
+- workspace.select: controlar otra pestaña inactiva del grupo por su ID.
+- workspace.close: cerrar únicamente pestañas inactivas del grupo propio.
+
+workspace.create y workspace.open seleccionan la nueva pestaña
+automaticamente para acciones posteriores (clics, escritura, captura,
+navegacion y adjuntos) sin manipular el cursor fisico. El puente comunica el
+ID seleccionado a sus clientes.
+
+Plan de ejemplo, almacenado fuera del repositorio:
+    [
+      {"action":"workspace.create","url":"https://example.org"},
+      {"action":"inspect"},
+      {"action":"workspace.open","url":"https://example.org/about"},
+      {"action":"inspect"},
+      {"action":"tab.list"}
+    ]
+
+Ejecutar el plan con la CLI tab_bridge run, --allow-writes y
+--allow-host example.org, usando el archivo local de emparejamiento.
+La lista de pestañas y sus URLs se conserva solo localmente y no se sube a Git.
+
+La aplicación incluye un selector por título/ID y botones para
+crear el grupo, abrir pestañas, cambiar entre ellas y cerrarlas.
+
+Restricciones: no se toman pestañas activas ni se cierran pestañas ajenas al
+grupo; incógnito y páginas internas de Chrome no son controlables.
+La creación exige una URL HTTP(S) aprobada. Tras reiniciar el navegador,
+se recupera un grupo solo cuando su nombre lo identifica sin ambigüedades.
+La capacidad tabGroups de Chrome requiere una recarga de la extensión para
+activar esta version, no una autorización por cada pestaña.

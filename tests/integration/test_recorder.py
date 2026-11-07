@@ -1,4 +1,5 @@
-import sys,time
+import sys,time,os
+import pytest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'src'))
 from mouse_virtual.modules.recording.recorder import MouseRecorder,window_info
@@ -9,6 +10,8 @@ def test_window_info_invalid():
     assert info["valid"] is False
     assert info["client"]==[0,0]
 
+@pytest.mark.skipif(os.environ.get("QT_QPA_PLATFORM")=="offscreen",
+                    reason="Windows recorder needs a real HWND; offscreen Qt returns a dummy ID")
 def test_recorder_lifecycle():
     app=QApplication.instance() or QApplication([])
     win=QWidget()

@@ -1,4 +1,5 @@
 'use strict';
+importScripts('workspace.js');
 // Controls only an explicitly paired browser tab. Never moves the Windows cursor,
 // extracts cookies, creates browser profiles, or activates a tab.
 const BRIDGE = 'ws://127.0.0.1:8765';
@@ -10,7 +11,9 @@ const VALID_KEYS = {
 };
 const ACTIONS = new Set([
   'inspect','screenshot','move','click','type','key','navigate',
-  'dom.click','dom.fill','file','tab.select'
+  'dom.click','dom.fill','file','tab.select',
+  'tab.list','tab.select_id',
+  'workspace.create','workspace.open','workspace.select','workspace.close'
 ]);
 let socket = null;
 let targetId = null;
@@ -195,6 +198,7 @@ async function changeTab(tab) {
   if (saved) {
     saved.tabId = tab.id;
     saved.windowId = tab.windowId;
+    saved.host = hostOf(tab.url)||saved.host;
     await savePairing(saved);
   }
   if (socket && socket.readyState === WebSocket.OPEN) {
@@ -257,6 +261,18 @@ async function execute(req) {
     }
     case 'tab.select':
       return switchTab(req.host,req.urlPrefix||'');
+    case 'tab.list':
+      return listAllTabs();
+    case 'tab.select_id':
+      return selectExistingTabById(req.tabId,req.host);
+    case 'workspace.create':
+      return createWorkspace(req.url);
+    case 'workspace.open':
+      return openInWorkspace(req.url);
+    case 'workspace.select':
+      return selectWorkspaceTab(req.tabId);
+    case 'workspace.close':
+      return closeWorkspaceTab(req.tabId);
   }
 }
 async function connectSocket(pairing) {

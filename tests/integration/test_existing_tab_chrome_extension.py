@@ -7,6 +7,8 @@ import asyncio
 import base64
 import json
 import os
+import shutil
+import socket
 import sys
 import tempfile
 import threading
@@ -49,15 +51,30 @@ def test_actual_background_tab_mouse_and_typing():
         thread.start()
         address = f"http://127.0.0.1:{http.server_port}/"
         bridge = TabBridge(TOKEN)
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            port=probe.getsockname()[1]
         try:
-            async with websockets.serve(bridge.handler, "127.0.0.1", 8765,
+            async with websockets.serve(bridge.handler, "127.0.0.1", port,
                                          max_size=8 * 1024 * 1024):
                 async with playwright.async_playwright() as pw:
-                    with tempfile.TemporaryDirectory(prefix="mv-ext-test-") as profile:
+                    # Avoid placing private screenshots beneath the Git checkout,
+                    # even if pytest temporarily overrides the TMP environment.
+                    external_tmp=Path.home()/".mouse-virtual-test-temp"
+                    external_tmp.mkdir(parents=True,exist_ok=True)
+                    with tempfile.TemporaryDirectory(prefix="mv-ext-test-",
+                                                     dir=str(external_tmp)) as profile:
+                        custom_ext=Path(profile)/"extension"
+                        shutil.copytree(EXT,custom_ext)
+                        for name in ("worker.js","manifest.json"):
+                            f=custom_ext/name
+                            f.write_text(f.read_text("utf8").replace(
+                                "ws://127.0.0.1:8765",
+                                f"ws://127.0.0.1:{port}"),encoding="utf8")
                         ctx = await pw.chromium.launch_persistent_context(
-                            user_data_dir=profile, channel="chromium", headless=True,
-                            args=["--disable-extensions-except=" + str(EXT),
-                                  "--load-extension=" + str(EXT)],
+                            user_data_dir=str(Path(profile)/"browser"), channel="chromium", headless=True,
+                            args=["--disable-extensions-except=" + str(custom_ext),
+                                  "--load-extension=" + str(custom_ext)],
                             viewport={"width": 700, "height": 550},
                         )
                         try:
@@ -85,7 +102,7 @@ def test_actual_background_tab_mouse_and_typing():
                                 {"action": "file", "selector": "#media", "path": str(video)},
                                 {"action": "screenshot"},
                             ]
-                            outcome = await send_commands(TOKEN, sequence, 8765)
+                            outcome = await send_commands(TOKEN, sequence, port)
                             assert len(outcome) == len(sequence)
                             assert all(x["result"]["ok"] for x in outcome), outcome
                             assert base64.b64decode(outcome[-1]["result"]["data"]).startswith(b"\x89PNG\r\n\x1a\n")
@@ -102,6 +119,7 @@ def test_actual_background_tab_mouse_and_typing():
                                 sys.executable,"-m","mouse_virtual.modules.agent_control.tab_bridge",
                                 "run","--token-file",str(token_file),
                                 "--plan",str(plan_file),"--screenshot-output",str(snapshot),
+                                "--port",str(port),
                                 stdout=asyncio.subprocess.PIPE,
                                 stderr=asyncio.subprocess.PIPE,env=env)
                             stdout,stderr=await proc.communicate()
@@ -115,7 +133,49 @@ def test_actual_background_tab_mouse_and_typing():
                               attached:targetId
                             })""")
                             assert state["active"] != state["attached"], state
-                            await worker.evaluate("detach()")
+                            original_id=state["attached"]
+                            # Create two tabs in an actual Chrome tab group, no
+                            # foreground activation or change to other tab.
+                            created=await send_commands(TOKEN,[
+                                {"action":"workspace.create","url":address}],port)
+                            assert created[0]["result"]["ok"],created
+                            first=created[0]["result"]["tab"]["tabId"]
+                            group=created[0]["result"]["groupId"]
+                            opened=await send_commands(TOKEN,[
+                                {"action":"workspace.open","url":address}],port)
+                            assert opened[0]["result"]["ok"],opened
+                            second=opened[0]["result"]["tab"]["tabId"]
+                            assert opened[0]["result"]["groupId"]==group
+                            listed=await send_commands(TOKEN,[{"action":"tab.list"}],port)
+                            assert listed[0]["result"]["ok"],listed
+                            assert {first,second}.issubset({
+                                t["tabId"] for t in listed[0]["result"]["workspace"]["tabs"]
+                            })
+                            selected=await send_commands(TOKEN,[
+                                {"action":"workspace.select","tabId":first}],port)
+                            assert selected[0]["result"]["ok"],selected
+                            payload=await send_commands(TOKEN,[
+                                {"action":"dom.fill","selector":"#name","text":"workspace"},
+                                {"action":"dom.click","selector":"#save"}],port)
+                            assert all(z["result"]["ok"] for z in payload),payload
+                            # No user-facing page is changed by workspace actions.
+                            assert await other.locator("#result").inner_text()==""
+                            outside=await send_commands(TOKEN,[
+                                {"action":"tab.select_id","tabId":original_id,
+                                 "host":"127.0.0.1"}],port)
+                            assert outside[0]["result"]["ok"],outside
+                            again=await send_commands(TOKEN,[
+                                {"action":"workspace.select","tabId":first}],port)
+                            assert again[0]["result"]["ok"],again
+                            after=await worker.evaluate("""async () => ({
+                              active:(await chrome.tabs.query({active:true,currentWindow:true}))[0].id,
+                              attached:targetId
+                            })""")
+                            assert after["active"]!=after["attached"],after
+                            closed=await send_commands(TOKEN,[
+                                {"action":"workspace.close","tabId":second}],port)
+                            assert closed[0]["result"]["ok"],closed
+                            await worker.evaluate("disconnect()")
                         finally:
                             await ctx.close()
         finally:
