@@ -27,7 +27,9 @@ def main(argv=None):
                 data=json.loads(plan.read_text(encoding="utf8"))
                 req["steps"]=data["steps"]
             payload=execute_request(req)
-        print(json.dumps(payload,ensure_ascii=False))
+        # Escape non-ASCII window titles for Windows console code pages.
+        # JSON decoders recover the original Unicode transparently.
+        print(json.dumps(payload,ensure_ascii=True))
         return 0
     except Exception as exc:
         print(json.dumps({"ok":False,"error_type":type(exc).__name__},ensure_ascii=False),file=sys.stderr)
