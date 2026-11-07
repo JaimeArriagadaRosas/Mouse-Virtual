@@ -31,6 +31,8 @@ def main(argv=None):
     p.add_argument("--allow-host", required=True, action="append", dest="hosts")
     p.add_argument("--profile-dir", help="Dedicated Chromium profile, OUTSIDE this repository")
     p.add_argument("--artifacts-dir", help="Optional screenshots directory, OUTSIDE this repository")
+    p.add_argument("--allow-file-root", action="append", dest="file_roots", default=[],
+                   help="Explicit root that may supply video files for upload_file")
     p.add_argument("--report", help="Write JSON result to a location OUTSIDE this repository")
     p.add_argument("--headful", action="store_true", help="Show isolated browser window")
     p.add_argument("--allow-writes", action="store_true", help="Enable fill, click and select")
@@ -49,16 +51,18 @@ def main(argv=None):
         _ensure_untracked_location(args.artifacts_dir, "Artifacts")
         _ensure_untracked_location(args.report, "Report")
         validated = validate_plan(plan, allowed_hosts=allowed_hosts,
-                                  allow_writes=(args.dry_run or args.allow_writes))
+                                  allow_writes=(args.dry_run or args.allow_writes),
+                                  allowed_file_roots=args.file_roots)
         if args.dry_run:
             result = {"ok": True, "dry_run": True, "step_count": len(validated),
                       "actions": [step["action"] for step in validated],
                       "plan_sha256": plan_digest(plan),
-                      "writes_requested": any(s["action"] in ("fill", "click", "select", "press")
-                                              for s in validated)}
+                      "writes_requested": any(s["action"] in ("fill", "click", "select", "press",
+                                                               "upload_file") for s in validated)}
         else:
             result = execute_plan(plan, allowed_hosts=allowed_hosts,
                                   allow_writes=args.allow_writes,
+                                  allowed_file_roots=args.file_roots,
                                   headless=not args.headful,
                                   profile_dir=args.profile_dir,
                                   artifacts_dir=args.artifacts_dir,

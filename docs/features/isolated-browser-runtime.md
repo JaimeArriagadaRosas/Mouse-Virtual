@@ -5,7 +5,8 @@ This experimental branch adds a general-purpose, composable browser workflow run
 ## Security and privacy boundaries
 
 - Only an explicit host allowlist can authorize network navigation and resource requests.
-- Plans use a small JSON action vocabulary; arbitrary JavaScript, shell commands, file reading and unapproved URLs are not supported.
+- Plans use a small JSON action vocabulary; arbitrary JavaScript, shell commands, unrestricted file reading and unapproved URLs are not supported.
+- File attachment is limited to video extensions and explicit `--allow-file-root` directories, checked with canonical paths to block directory traversal.
 - Form mutations require the explicit `--allow-writes` flag, while `--dry-run` validates without browser launch.
 - Profiles, screenshots, and machine-readable reports must be stored outside the Git repository. No profile is shared with a user's personal browser.
 - The executable does not read browser cookies from other running sessions or collect credentials.
@@ -35,7 +36,7 @@ python -m mouse_virtual.modules.agent_control.browser_workflow_cli `
   --plan "D:\MyPrivatePlans\plan.json" --allow-host 127.0.0.1 --dry-run
 ```
 
-To run a trusted plan, omit `--dry-run`, provide `--allow-writes` and optionally set `--artifacts-dir` to a directory outside the repository. Headless operation is the default; `--headful` intentionally launches a visible window and may disrupt desktop usage.
+To run a trusted plan, omit `--dry-run`, provide `--allow-writes` and optionally set `--artifacts-dir` to a directory outside the repository. For media attachment, a plan may use `{"action":"upload_file","path":"D:\\\\MyPrivateVideos\\\\clip.mp4"}` and the CLI must receive `--allow-file-root D:\\\\MyPrivateVideos`. Headless operation is the default; `--headful` intentionally launches a visible window and may disrupt desktop usage.
 
 ## Scope and known limitations
 

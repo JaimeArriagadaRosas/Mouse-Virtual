@@ -13,6 +13,7 @@ from mouse_virtual.modules.agent_control.browser_workflows import execute_plan
 
 HTML = """<!doctype html><html><head><title>Independent demo</title></head><body>
 <label for="query">Question</label><input id="query" aria-label="Question">
+<input type="file" id="media-upload" aria-label="Media upload">
 <button onclick="document.getElementById('result').textContent='Found: '+
 document.getElementById('query').value">Search</button>
 <div role="status" aria-label="Outcome" id="result"></div>
@@ -80,3 +81,17 @@ def test_cli_dry_run_reports_without_launch(site, tmp_path):
     assert payload["ok"] is True
     assert payload["writes_requested"] is True
     assert payload["step_count"] == 2
+
+
+def test_headless_file_attachment_uses_file_root(site, tmp_path):
+    media = tmp_path / "clip.mp4"
+    media.write_bytes(b"fictional-video-data" * 90)
+    plan = {"version": 1, "steps": [
+        {"action": "open", "url": site},
+        {"action": "upload_file", "path": str(media), "index": 0},
+    ]}
+    response = execute_plan(plan, allowed_hosts={"127.0.0.1"},
+                            allowed_file_roots=[tmp_path], allow_writes=True,
+                            headless=True)
+    assert response["ok"] and response["completed"] == 2
+    assert response["steps"][-1]["result"]["bytes"] == media.stat().st_size

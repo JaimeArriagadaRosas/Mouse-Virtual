@@ -102,3 +102,46 @@ def test_generic_engine_runs_without_global_input():
     assert r["completed"] == 5
     assert r["steps"][1]["result"] == {"filled": True, "length": 4}
     assert r["steps"][3]["result"]["text"] == "Results: text"
+
+
+def test_media_upload_requires_explicit_file_root_and_writes(tmp_path):
+    folder = tmp_path / "approved"
+    folder.mkdir()
+    video = folder / "sample.mp4"
+    video.write_bytes(b"video-fixture" * 100)
+    payload = plan(open_step(), {"action": "upload_file", "path": str(video)})
+    with pytest.raises(PermissionError):
+        validate_plan(payload, allowed_hosts=LOCAL, allow_writes=False,
+                      allowed_file_roots=[folder])
+    with pytest.raises(PermissionError):
+        validate_plan(payload, allowed_hosts=LOCAL, allow_writes=True)
+    assert len(validate_plan(payload, allowed_hosts=LOCAL, allow_writes=True,
+                             allowed_file_roots=[folder])) == 2
+
+
+def test_media_upload_rejects_secrets_and_path_traversal(tmp_path):
+    approved = tmp_path / "allowed"
+    blocked = tmp_path / "blocked"
+    approved.mkdir()
+    blocked.mkdir()
+    secret = blocked / "private.mp4"
+    secret.write_bytes(b"fake")
+    payload = plan(open_step(), {"action": "upload_file", "path": str(secret)})
+    with pytest.raises(PermissionError):
+        validate_plan(payload, allowed_hosts=LOCAL, allow_writes=True,
+                      allowed_file_roots=[approved])
+    invalid = approved / "secrets.json"
+    invalid.write_text("{}")
+    with pytest.raises(ValueError):
+        validate_plan(plan(open_step(), {"action": "upload_file", "path": str(invalid)}),
+                      allowed_hosts=LOCAL, allow_writes=True,
+                      allowed_file_roots=[approved])
+
+
+def test_file_input_index_is_bounded(tmp_path):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"abc")
+    payload = plan(open_step(), {"action": "upload_file", "path": str(video), "index": 6})
+    with pytest.raises(ValueError):
+        validate_plan(payload, allowed_hosts=LOCAL, allow_writes=True,
+                      allowed_file_roots=[tmp_path])

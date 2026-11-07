@@ -17,9 +17,10 @@ from mouse_virtual.infrastructure.browser.session import BrowserSession
 
 MAX_STEPS = 40
 MAX_BYTES = 65536
-WRITES = frozenset(("fill", "click", "select", "press"))
-ACTIONS = frozenset(("open", "fill", "click", "select", "press",
+WRITES = frozenset(("fill", "click", "select", "press", "upload_file"))
+ACTIONS = frozenset(("open", "fill", "click", "select", "press", "upload_file",
                      "assert_text", "assert_url", "read_text", "screenshot"))
+MEDIA_EXTENSIONS = frozenset((".mp4", ".mov", ".webm", ".mkv"))
 SAFE_SCREENSHOT_NAME = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$")
 MAX_FIELD_LENGTH = 4000
 
@@ -41,7 +42,19 @@ def _text(value, field, limit=MAX_FIELD_LENGTH):
     return value
 
 
-def validate_plan(plan, *, allowed_hosts: set[str], allow_writes=False):
+def approved_upload_path(path, allowed_file_roots=()):
+    _text(path, "upload_file.path", 4096)
+    resolved = Path(path).expanduser().resolve(strict=True)
+    if not resolved.is_file() or resolved.suffix.lower() not in MEDIA_EXTENSIONS:
+        raise ValueError("Upload requires an existing video file")
+    roots = [Path(root).expanduser().resolve(strict=True) for root in allowed_file_roots]
+    if not roots or not any(resolved.is_relative_to(root) for root in roots):
+        raise PermissionError("File is outside explicitly approved file roots")
+    return resolved
+
+
+def validate_plan(plan, *, allowed_hosts: set[str], allow_writes=False,
+                  allowed_file_roots=()):
     if not isinstance(plan, dict) or set(plan) - {"version", "steps", "name"}:
         raise ValueError("Plan must be an object with version, name and steps")
     if plan.get("version") != 1:
@@ -81,6 +94,12 @@ def validate_plan(plan, *, allowed_hosts: set[str], allow_writes=False):
             if act == "select":
                 allowed_fields.add("value")
                 _text(step.get("value"), "value", 200)
+            if act == "upload_file":
+                allowed_fields.update(("path", "index"))
+                approved_upload_path(step.get("path"), allowed_file_roots)
+                index = step.get("index", 0)
+                if type(index) is not int or index < 0 or index > 4:
+                    raise ValueError("File input index must be 0..4")
             if act == "press":
                 allowed_fields.add("key")
                 if step.get("key") not in ("Enter", "Tab", "Escape", "ArrowDown", "ArrowUp"):
@@ -109,9 +128,10 @@ def plan_digest(plan):
 
 
 def execute_plan(plan, *, allowed_hosts: set[str], allow_writes=False,
-                 headless=True, profile_dir=None, artifacts_dir=None,
-                 session_factory=BrowserSession, timeout_ms=12000):
-    steps = validate_plan(plan, allowed_hosts=allowed_hosts, allow_writes=allow_writes)
+                 allowed_file_roots=(), headless=True, profile_dir=None,
+                 artifacts_dir=None, session_factory=BrowserSession, timeout_ms=12000):
+    steps = validate_plan(plan, allowed_hosts=allowed_hosts, allow_writes=allow_writes,
+                          allowed_file_roots=allowed_file_roots)
     artifacts = Path(artifacts_dir).resolve() if artifacts_dir else None
     if any(step["action"] == "screenshot" for step in steps) and artifacts is None:
         raise ValueError("An explicit artifacts directory is required for screenshots")
@@ -137,6 +157,12 @@ def execute_plan(plan, *, allowed_hosts: set[str], allow_writes=False,
                 path = artifacts / (step["name"] + ".png")
                 page.screenshot(path=str(path), animations="disabled", timeout=timeout_ms)
                 detail = {"captured": True, "filename": path.name}
+            elif action == "upload_file":
+                video = approved_upload_path(step["path"], allowed_file_roots)
+                page.locator('input[type="file"]').nth(step.get("index", 0)).set_input_files(
+                    str(video), timeout=timeout_ms)
+                detail = {"file_attached": True, "bytes": video.stat().st_size}
+                approved_url(page.url, allowed_hosts)
             else:
                 target = page.get_by_role(step["role"], name=step["name"], exact=True).first
                 if action == "fill":
